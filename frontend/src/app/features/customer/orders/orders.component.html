@@ -53,7 +53,6 @@
                 <thead>
                   <tr>
                     <th class="th-product-details">Product Details</th>
-                    <th class="th-product-preview text-center">Product Preview</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -62,6 +61,9 @@
                       <td>
                         <div class="product-item-cell flex items-center gap-3">
                           <div class="font-bold text-sm item-title">
+                            <h4 class="product-img-cell">
+                              <img [src]="item.image" [alt]="item.productTitle" class="item-img" />
+                            </h4>
                             <h4>
                               <span>Order Id: {{ order.orderNumber }}</span>
                             </h4>
@@ -137,11 +139,6 @@
                               }
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td class="product-img-cell">
-                        <div class="product-img-wrapper">
-                          <img [src]="item.image" [alt]="item.productTitle" class="item-img" />
                         </div>
                       </td>
                     </tr>
