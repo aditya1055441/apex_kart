@@ -1,10 +1,10 @@
 <!-- Top Announcement & Quick Links Bar -->
 <div class="top-bar">
   <div class="container flex justify-between items-center text-xs">
-    <div class="flex items-center gap-3">
-      <span class="announcement">✨ Super Deals: Up to 50% Off Electronics & Fashion! Use code <strong>WELCOME10</strong></span>
+    <div class="flex items-center gap-3 announcement-box">
+      <span class="announcement">✨ Super Deals: Up to 50% Off! Code: <strong>WELCOME10</strong></span>
     </div>
-    <div class="top-nav-links flex items-center gap-4 text-xs">
+    <div class="top-nav-links flex items-center gap-4 text-xs desktop-only">
       <a routerLink="/seller/register" class="top-link">Become a Seller</a>
       <a routerLink="/orders" class="top-link">Track Orders</a>
       @if (auth.isAuthenticated()) {
@@ -19,7 +19,7 @@
 
 <!-- Main Navbar -->
 <header class="main-header">
-  <div class="container flex items-center justify-between gap-6">
+  <div class="container header-inner flex items-center justify-between gap-6">
     <!-- Brand Logo -->
     <a routerLink="/" class="brand-logo flex items-center gap-2">
       <div class="logo-mark">A</div>
@@ -36,7 +36,7 @@
           type="text" 
           [(ngModel)]="searchQuery" 
           name="searchQuery"
-          placeholder="Search 10,000+ products, electronics, fashion, brands..." 
+          placeholder="Search 10,000+ products, brands..." 
           class="search-input"
         />
         <button type="submit" class="search-btn" aria-label="Search">
@@ -52,22 +52,22 @@
     <div class="nav-actions flex items-center gap-4">
       <!-- Seller link if not in seller mode -->
       @if (!auth.isSeller() && !auth.isAdmin()) {
-        <a routerLink="/seller/register" class="seller-cta">
+        <a routerLink="/seller/register" class="seller-cta desktop-only">
           Become a Seller
         </a>
       }
 
       <!-- Admin Panel Link -->
       @if (auth.isAdmin()) {
-        <a routerLink="/admin/dashboard" class="btn btn-outline btn-sm">
-          ⚙️ Admin Console
+        <a routerLink="/admin/dashboard" class="btn btn-outline btn-sm desktop-only">
+          ⚙️ Admin
         </a>
       }
 
       <!-- Seller Panel Link -->
       @if (auth.isSeller()) {
-        <a routerLink="/seller/dashboard" class="btn btn-outline btn-sm">
-          📊 Seller Portal
+        <a routerLink="/seller/dashboard" class="btn btn-outline btn-sm desktop-only">
+          📊 Seller
         </a>
       }
 
@@ -76,7 +76,7 @@
         @if (auth.isAuthenticated()) {
           <button type="button" class="user-btn flex items-center gap-2" (click)="toggleDropdown()">
             <div class="avatar">{{ auth.currentUser()?.name?.charAt(0) || 'U' }}</div>
-            <div class="user-meta text-left">
+            <div class="user-meta text-left desktop-only">
               <span class="user-greeting">Hi, {{ auth.currentUser()?.name?.split(' ')?.at(0) }}</span>
               <span class="user-role">{{ auth.currentUser()?.role }}</span>
             </div>
@@ -102,8 +102,9 @@
             </div>
           }
         } @else {
-          <button class="btn btn-outline btn-sm" (click)="auth.openAuthModal()">
-            Sign In / Register
+          <button class="btn btn-outline btn-sm auth-btn" (click)="auth.openAuthModal()">
+            <span class="desktop-only">Sign In / Register</span>
+            <span class="mobile-only">Sign In</span>
           </button>
         }
       </div>

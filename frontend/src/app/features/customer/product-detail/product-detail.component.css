@@ -89,7 +89,9 @@
 .col-span-2 { grid-column: span 2 / span 2; }
 
 @media (max-width: 860px) {
-  .pdp-grid { grid-template-columns: 1fr; gap: 2rem; }
+  .pdp-grid { grid-template-columns: 1fr; gap: 1.5rem; }
   .reviews-grid { grid-template-columns: 1fr; }
   .col-span-2 { grid-column: span 1 / span 1; }
+  .thumb-btn { width: 56px; height: 56px; flex-shrink: 0; }
+  .gallery-thumbs { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 0.25rem; }
 }

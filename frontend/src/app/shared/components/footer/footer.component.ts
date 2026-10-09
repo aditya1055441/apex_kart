@@ -156,6 +156,28 @@ import { RouterModule } from '@angular/router';
     .mb-4 { margin-bottom: 1rem; }
     .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
     .py-12 { padding-top: 3rem; padding-bottom: 3rem; }
+
+    @media (max-width: 768px) {
+      .features-bar .container {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 1rem !important;
+      }
+      .footer-main .container {
+        grid-template-columns: 1fr !important;
+        gap: 1.5rem !important;
+      }
+      .footer-bottom .container {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .features-bar .container {
+        grid-template-columns: 1fr !important;
+      }
+    }
   `]
 })
 export class FooterComponent {}
