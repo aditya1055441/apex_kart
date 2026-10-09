@@ -21,81 +21,7 @@
         @for (order of orders(); track order.id) {
           <div class="order-card card">
             <!-- 1. Order Summary Table (Order ID, Delivery Address, Payment & Total, Status & Cancel Action) -->
-            <div class="table-responsive order-summary-table-wrap">
-              <table class="table order-summary-table">
-                <thead>
-                  <tr>
-                    <th style="min-width: 170px;">Order ID & Date</th>
-                    <th style="min-width: 250px;">Delivery Address</th>
-                    <th style="min-width: 160px;">Payment & Total</th>
-                    <th style="min-width: 180px;">Status & Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <!-- Order ID Cell -->
-                    <td class="align-top">
-                      <p>
-                        <span class="text-xs text-muted block">Order Id:-<strong>{{ order.orderNumber }}</strong></span>
-                      </p>
-                      <p>
-                        <span class="text-xs text-muted block">Placed:- <strong>{{ order.createdAt | date:'mediumDate' }}</strong></span>
-                      </p>
-                      <span class="text-xs text-muted block">Items-: <strong>{{ order.items.length }} product(s)</strong></span>
-                    </td>
 
-                    <!-- Delivery Address Cell -->
-                    <td class="align-top address-cell">
-                      <div class="address-box">
-                        <strong class="recipient-name block text-sm">{{ order.shippingAddress.fullName }}</strong>
-                        <span class="recipient-phone text-xs text-muted block">📞 {{ order.shippingAddress.phone }}</span>
-                        <span class="address-text text-xs text-muted block mt-1">
-                          {{ order.shippingAddress.addressLine1 }}{{ order.shippingAddress.addressLine2 ? ', ' + order.shippingAddress.addressLine2 : '' }},
-                          {{ order.shippingAddress.city }}, {{ order.shippingAddress.state }} - {{ order.shippingAddress.postalCode }}
-                        </span>
-                      </div>
-                    </td>
-
-                    <!-- Payment & Total Cell -->
-                    <td class="align-top payment-cell">
-                      <p>
-                        <span class="text-xs text-muted block">Total amount(inc tax) = <strong>₹{{ order.totalAmount.toLocaleString() }}</strong></span>
-                      </p>
-                      <span class="badge badge-neutral text-xs mt-1">{{ order.paymentMethod }}</span>
-                      <span class="text-xs text-muted block mt-1">Payment: <strong>{{ order.paymentStatus }}</strong></span>
-                    </td>
-
-                    <!-- Status & Actions Cell -->
-                    <td class="align-top actions-cell">
-                      <div class="flex flex-col gap-2">
-                        <span class="badge"
-                              [class.badge-primary]="order.status === 'PLACED'"
-                              [class.badge-warning]="order.status === 'PROCESSING'"
-                              [class.badge-info]="order.status === 'SHIPPED'"
-                              [class.badge-success]="order.status === 'DELIVERED'"
-                              [class.badge-danger]="order.status === 'CANCELLED'">
-                          {{ order.status }}
-                        </span>
-
-                        @if (order.status === 'PLACED' || order.status === 'PROCESSING') {
-                          <div class="order-action-buttons flex flex-wrap gap-2 mt-1">
-                            @if (order.paymentMethod === 'RAZORPAY' && order.paymentStatus === 'PENDING') {
-                              <button class="btn btn-primary btn-sm pay-btn flex-1" (click)="resumePaymentForOrder(order)" [disabled]="isPayingOrderId() === order.id">
-                                {{ isPayingOrderId() === order.id ? 'Connecting...' : '💳 Pay Now' }}
-                              </button>
-                            }
-
-                            <button class="btn btn-danger btn-sm cancel-btn flex-1" (click)="cancelOrder(order)">
-                              ✖ Cancel Order
-                            </button>
-                          </div>
-                        }
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
 
             <!-- 2. Stepper Progress Tracking (if not cancelled) -->
             @if (order.status !== 'CANCELLED') {
@@ -127,7 +53,6 @@
                 <thead>
                   <tr>
                     <th style="min-width: 250px;">Product Item</th>
-                    <th style="min-width: 150px;">Vendor / Seller</th>
                     <th style="min-width: 120px;">Price & Qty</th>
                     <th style="min-width: 110px;">Subtotal</th>
                     <th style="min-width: 180px;">Shipment & Return</th>
@@ -144,13 +69,13 @@
                             @if (item.sku) {
                               <span class="text-xs text-muted font-mono block">SKU: {{ item.sku }}</span>
                             }
+                            <h4 class="font-bold text-sm item-title">vendor:
+                              <span>
+                                🏬 {{ item.storeName }}
+                              </span>
+                            </h4>
                           </div>
                         </div>
-                      </td>
-                      <td>
-                        <span class="vendor-chip badge badge-neutral text-xs font-semibold">
-                          🏬 {{ item.storeName }}
-                        </span>
                       </td>
                       <td>
                         <div class="price-qty-cell">
@@ -184,6 +109,90 @@
                       </td>
                     </tr>
                   }
+                </tbody>
+              </table>
+            </div>
+            <div class="table-responsive order-summary-table-wrap">
+              <table class="table order-summary-table">
+                <thead>
+                <tr>
+                  <th style="min-width: 170px;">Order ID & Date</th>
+                  <th style="min-width: 160px;">Payment & Total</th>
+                  <th style="min-width: 180px;">Status & Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                  <!-- Order ID Cell -->
+                  <td class="align-top">
+                    <p>
+                      <span class="text-xs text-muted block">Order Id:-<strong>{{ order.orderNumber }}</strong></span>
+                    </p>
+                    <p>
+                      <span class="text-xs text-muted block">Placed:- <strong>{{ order.createdAt | date:'mediumDate' }}</strong></span>
+                    </p>
+                    <span class="text-xs text-muted block">Items-: <strong>{{ order.items.length }} product(s)</strong></span>
+                  </td>
+
+                  <!-- Payment & Total Cell -->
+                  <td class="align-top payment-cell">
+                    <p>
+                      <span class="text-xs text-muted block">Total amount(inc tax) = <strong>₹{{ order.totalAmount.toLocaleString() }}</strong></span>
+                    </p>
+                    <span class="badge badge-neutral text-xs mt-1">{{ order.paymentMethod }}</span>
+                    <span class="text-xs text-muted block mt-1">Payment: <strong>{{ order.paymentStatus }}</strong></span>
+                  </td>
+
+                  <!-- Status & Actions Cell -->
+                  <td class="align-top actions-cell">
+                    <div class="flex flex-col gap-2">
+                        <span class="badge"
+                              [class.badge-primary]="order.status === 'PLACED'"
+                              [class.badge-warning]="order.status === 'PROCESSING'"
+                              [class.badge-info]="order.status === 'SHIPPED'"
+                              [class.badge-success]="order.status === 'DELIVERED'"
+                              [class.badge-danger]="order.status === 'CANCELLED'">
+                          {{ order.status }}
+                        </span>
+
+                      @if (order.status === 'PLACED' || order.status === 'PROCESSING') {
+                        <div class="order-action-buttons flex flex-wrap gap-2 mt-1">
+                          @if (order.paymentMethod === 'RAZORPAY' && order.paymentStatus === 'PENDING') {
+                            <button class="btn btn-primary btn-sm pay-btn flex-1" (click)="resumePaymentForOrder(order)" [disabled]="isPayingOrderId() === order.id">
+                              {{ isPayingOrderId() === order.id ? 'Connecting...' : '💳 Pay Now' }}
+                            </button>
+                          }
+
+                          <button class="btn btn-danger btn-sm cancel-btn flex-1" (click)="cancelOrder(order)">
+                            ✖ Cancel Order
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+              <table class="table order-summary-table">
+                <thead>
+                <tr>
+                  <th style="min-width: 250px;">Delivery Address</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                  <!-- Delivery Address Cell -->
+                  <td class="align-top address-cell">
+                    <div class="address-box">
+                      <strong class="recipient-name block text-sm">{{ order.shippingAddress.fullName }}</strong>
+                      <span class="recipient-phone text-xs text-muted block">📞 {{ order.shippingAddress.phone }}</span>
+                      <span class="address-text text-xs text-muted block mt-1">
+                          {{ order.shippingAddress.addressLine1 }}{{ order.shippingAddress.addressLine2 ? ', ' + order.shippingAddress.addressLine2 : '' }},
+                        {{ order.shippingAddress.city }}, {{ order.shippingAddress.state }} - {{ order.shippingAddress.postalCode }}
+                        </span>
+                    </div>
+                  </td>
+                </tr>
                 </tbody>
               </table>
             </div>
