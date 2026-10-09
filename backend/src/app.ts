@@ -1,5 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
 import authRoutes from './routes/auth.routes';
 import productRoutes from './routes/product.routes';
 import categoryRoutes from './routes/category.routes';
@@ -51,6 +53,18 @@ export const createApp = () => {
     await db.markNotificationAsRead(req.params.id);
     res.json({ success: true, message: 'Notification marked as read' });
   });
+
+  // Serve static frontend in production if built assets exist
+  const frontendDistPath = path.join(__dirname, '../public');
+  if (fs.existsSync(frontendDistPath)) {
+    app.use(express.static(frontendDistPath));
+    app.get('*', (req: Request, res: Response, next: NextFunction) => {
+      if (req.path.startsWith('/api')) {
+        return next();
+      }
+      res.sendFile(path.join(frontendDistPath, 'index.html'));
+    });
+  }
 
   // 404 handler
   app.use((req: Request, res: Response) => {

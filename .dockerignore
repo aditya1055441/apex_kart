@@ -1,0 +1,16 @@
+# Root Docker Ignore
+**/node_modules
+**/dist
+**/.angular
+**/.git
+**/.gitignore
+**/.env
+**/.env.*
+**/pgdata
+**/tests
+**/*.spec.ts
+**/*.test.ts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

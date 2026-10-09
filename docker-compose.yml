@@ -15,11 +15,12 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./backend/src/database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
 
-  backend:
+  app:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
-    container_name: ecommerce_backend
+      target: fullstack
+    container_name: ecommerce_app
     restart: always
     environment:
       PORT: 5000
@@ -31,20 +32,6 @@ services:
       - "5000:5000"
     depends_on:
       - postgres
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: ecommerce_frontend
-    restart: always
-    environment:
-      PORT: 80
-      BACKEND_URL: http://backend:5000
-    ports:
-      - "4200:80"
-    depends_on:
-      - backend
 
 volumes:
   pgdata:

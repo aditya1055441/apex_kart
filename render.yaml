@@ -1,12 +1,13 @@
 services:
   # ----------------------------------------------------
-  # Backend REST API Service
+  # Unified Marketplace Web Service (Frontend + Backend)
+  # Built from root Dockerfile with multi-stage caching
   # ----------------------------------------------------
   - type: web
-    name: ecommerce-backend
+    name: apexkart-marketplace
     env: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     plan: starter
     region: oregon
     healthCheckPath: /api/health
@@ -29,25 +30,6 @@ services:
         sync: false
       - key: CORS_ORIGIN
         value: '*'
-
-  # ----------------------------------------------------
-  # Frontend Angular Web Service (Nginx Container)
-  # ----------------------------------------------------
-  - type: web
-    name: ecommerce-frontend
-    env: docker
-    dockerfilePath: ./frontend/Dockerfile
-    dockerContext: ./frontend
-    plan: starter
-    region: oregon
-    envVars:
-      - key: PORT
-        value: 80
-      - key: BACKEND_URL
-        fromService:
-          type: web
-          name: ecommerce-backend
-          property: host
 
 databases:
   # ----------------------------------------------------
