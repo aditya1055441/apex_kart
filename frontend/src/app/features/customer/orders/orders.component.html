@@ -21,46 +21,7 @@
         @for (order of orders(); track order.id) {
           <div class="order-card card">
             <!-- Order Meta Header -->
-            <div class="order-header p-4 bg-muted flex flex-wrap justify-between items-center gap-4 border-b">
-              <div class="flex items-center gap-4 text-xs">
-                <div>
-                  <span class="text-muted block">ORDER PLACED</span>
-                  <strong>{{ order.createdAt | date:'mediumDate' }}</strong>
-                </div>
-                <div>
-                  <span class="text-muted block">TOTAL</span>
-                  <strong class="text-primary">₹{{ order.totalAmount.toLocaleString() }}</strong>
-                </div>
-                <div>
-                  <span class="text-muted block">SHIP TO</span>
-                  <strong>{{ order.shippingAddress.fullName }}</strong>
-                </div>
-              </div>
 
-              <div class="flex items-center gap-3">
-                <span class="text-xs font-mono">#{{ order.orderNumber }}</span>
-                <span class="badge" 
-                  [class.badge-primary]="order.status === 'PLACED'"
-                  [class.badge-warning]="order.status === 'PROCESSING'"
-                  [class.badge-info]="order.status === 'SHIPPED'"
-                  [class.badge-success]="order.status === 'DELIVERED'"
-                  [class.badge-danger]="order.status === 'CANCELLED'">
-                  {{ order.status }}
-                </span>
-
-                @if (order.paymentMethod === 'RAZORPAY' && order.paymentStatus === 'PENDING' && order.status !== 'CANCELLED') {
-                  <button class="btn btn-primary btn-sm" (click)="resumePaymentForOrder(order)" [disabled]="isPayingOrderId() === order.id">
-                    {{ isPayingOrderId() === order.id ? 'Connecting...' : '💳 Pay Now / Resume' }}
-                  </button>
-                }
-
-                @if (order.status === 'PLACED' || order.status === 'PROCESSING') {
-                  <button class="btn btn-danger btn-sm" (click)="cancelOrder(order)">
-                    Cancel Order
-                  </button>
-                }
-              </div>
-            </div>
 
             <!-- Order Stepper Progress -->
             @if (order.status !== 'CANCELLED') {
@@ -92,6 +53,17 @@
                 <div class="order-item-row flex gap-4 items-center">
                   <img [src]="item.image" [alt]="item.productTitle" class="item-img" />
                   <div class="flex-1">
+                    <p>
+                    <span class="text-xs font-mono">Order Id:-{{ order.orderNumber }}</span>
+                    <span class="badge"
+                          [class.badge-primary]="order.status === 'PLACED'"
+                          [class.badge-warning]="order.status === 'PROCESSING'"
+                          [class.badge-info]="order.status === 'SHIPPED'"
+                          [class.badge-success]="order.status === 'DELIVERED'"
+                          [class.badge-danger]="order.status === 'CANCELLED'">
+                      {{ order.status }}
+                    </span>
+                    </p>
                     <span class="text-xs text-muted">Vendor: <strong>{{ item.storeName }}</strong></span>
                     <h4 class="font-bold text-sm">{{ item.productTitle }}</h4>
                     <p class="text-xs text-muted">Qty: {{ item.quantity }} | ₹{{ item.price.toLocaleString() }} each</p>
@@ -128,6 +100,33 @@
               <div>
                 <span>Payment: </span>
                 <strong>{{ order.paymentMethod }} ({{ order.paymentStatus }})</strong>
+              </div>
+            </div>
+
+            <div class="order-header p-4 bg-muted flex flex-wrap justify-between items-center gap-4 border-b">
+              <div class="flex items-center gap-4 text-xs">
+                <div>
+                  <span class="text-muted block"><strong>Placed on-</strong></span>
+                  <strong>{{ order.createdAt | date:'mediumDate' }}</strong>
+                </div>
+                <div>
+                  <span class="text-muted block"><strong>Total amount-</strong></span>
+                  <strong class="text-primary">₹{{ order.totalAmount.toLocaleString() }}</strong>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3">
+                @if (order.paymentMethod === 'RAZORPAY' && order.paymentStatus === 'PENDING' && order.status !== 'CANCELLED') {
+                  <button class="btn btn-primary btn-sm" (click)="resumePaymentForOrder(order)" [disabled]="isPayingOrderId() === order.id">
+                    {{ isPayingOrderId() === order.id ? 'Connecting...' : '💳 Pay Now / Resume' }}
+                  </button>
+                }
+
+                @if (order.status === 'PLACED' || order.status === 'PROCESSING') {
+                  <button class="btn btn-danger btn-sm" (click)="cancelOrder(order)">
+                    Cancel Order
+                  </button>
+                }
               </div>
             </div>
           </div>
