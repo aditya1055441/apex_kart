@@ -19,7 +19,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: fullstack
     container_name: ecommerce_app
     restart: always
     environment:
