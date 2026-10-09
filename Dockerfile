@@ -7,32 +7,6 @@
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
-# Stage 1: Build Angular Frontend
-# ------------------------------------------------------------------------------
-FROM node:20-alpine AS frontend-builder
-WORKDIR /app/frontend
-
-COPY frontend/package*.json frontend/angular.json frontend/tsconfig*.json ./
-RUN npm install
-
-COPY frontend/src/ ./src/
-COPY frontend/public/ ./public/
-
-RUN npm run build -- --configuration production
-
-# ------------------------------------------------------------------------------
-# Stage 2: Build Node.js TypeScript Backend
-# ------------------------------------------------------------------------------
-FROM node:20-alpine AS backend-builder
-WORKDIR /app/backend
-
-COPY backend/package*.json backend/tsconfig.json ./
-RUN npm install
-
-COPY backend/src/ ./src/
-RUN npm run build
-
-# ------------------------------------------------------------------------------
 # Stage 3: Unified Fullstack Production Image (Default Target)
 # Serves both the REST API and the Angular Web Storefront from a single container
 # ------------------------------------------------------------------------------
@@ -75,18 +49,3 @@ COPY backend/src/database/schema.sql ./src/database/schema.sql
 EXPOSE 5000
 
 CMD ["node", "dist/server.js"]
-
-# ------------------------------------------------------------------------------
-# Target: Standalone Frontend Only (Nginx)
-# ------------------------------------------------------------------------------
-FROM nginx:alpine AS frontend
-
-ENV PORT=80
-ENV BACKEND_URL=http://localhost:5000
-
-COPY --from=frontend-builder /app/frontend/dist/frontend/browser /usr/share/nginx/html
-COPY frontend/nginx.conf.template /etc/nginx/templates/default.conf.template
-
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
