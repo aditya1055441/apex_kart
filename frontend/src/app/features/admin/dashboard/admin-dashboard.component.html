@@ -1,0 +1,124 @@
+<div class="admin-dash-page py-8">
+  <div class="container">
+    <div class="header-row flex justify-between items-center mb-6">
+      <div>
+        <h1 class="page-title text-2xl font-bold">Platform Super Admin Control Panel</h1>
+        <p class="text-xs text-muted">Complete overview of multi-vendor marketplace health, volume, and payouts</p>
+      </div>
+
+      <div class="flex gap-2">
+        <a routerLink="/admin/sellers" class="btn btn-primary btn-sm">🏬 Seller KYC ({{ analytics()?.pendingKycCount || 0 }})</a>
+        <a routerLink="/admin/payouts" class="btn btn-outline btn-sm">💸 Payouts ({{ analytics()?.pendingPayoutsCount || 0 }})</a>
+        <a routerLink="/admin/categories" class="btn btn-outline btn-sm">🏷️ Taxonomy</a>
+      </div>
+    </div>
+
+    <!-- Main KPIs -->
+    <div class="kpi-grid grid grid-cols-4 gap-6 mb-8">
+      <div class="kpi-card card p-5">
+        <span class="text-xs font-bold text-muted uppercase tracking-wider block mb-1">Gross Marketplace Volume (GMV)</span>
+        <div class="text-3xl font-black text-primary font-display">
+          ₹{{ (analytics()?.totalGmv || 0).toLocaleString() }}
+        </div>
+        <span class="text-xs text-muted mt-2 block">{{ analytics()?.totalOrders || 0 }} total orders processed</span>
+      </div>
+
+      <div class="kpi-card card p-5">
+        <span class="text-xs font-bold text-muted uppercase tracking-wider block mb-1">Platform Commission Revenue</span>
+        <div class="text-3xl font-black text-success font-display">
+          ₹{{ (analytics()?.totalPlatformRevenue || 0).toLocaleString() }}
+        </div>
+        <span class="text-xs text-muted mt-2 block">Net marketplace retained fee</span>
+      </div>
+
+      <div class="kpi-card card p-5">
+        <span class="text-xs font-bold text-muted uppercase tracking-wider block mb-1">Registered Sellers</span>
+        <div class="text-3xl font-black text-main font-display">
+          {{ analytics()?.totalSellers || 0 }}
+        </div>
+        <span class="text-xs text-muted mt-2 block">
+          {{ analytics()?.activeSellers || 0 }} Active | {{ analytics()?.pendingKycCount || 0 }} Awaiting KYC
+        </span>
+      </div>
+
+      <div class="kpi-card card p-5">
+        <span class="text-xs font-bold text-muted uppercase tracking-wider block mb-1">Catalog Products</span>
+        <div class="text-3xl font-black text-main font-display">
+          {{ analytics()?.totalProducts || 0 }}
+        </div>
+        <span class="text-xs text-muted mt-2 block">Across 5 primary categories</span>
+      </div>
+    </div>
+
+    <!-- Analytics Tables Grid -->
+    <div class="grid grid-cols-2 gap-8">
+      <!-- Top Performing Stores -->
+      <div class="card overflow-hidden">
+        <div class="p-4 bg-muted border-b flex justify-between items-center font-bold text-sm">
+          <span>Top Vendor Stores by Sales</span>
+          <a routerLink="/admin/sellers" class="text-xs text-primary font-semibold">View All →</a>
+        </div>
+        <div class="table-responsive border-0">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Store</th>
+                <th>Commission</th>
+                <th>Lifetime Sales</th>
+                <th>Rating</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (store of topStores(); track store.id) {
+                <tr>
+                  <td>
+                    <strong>{{ store.name }}</strong>
+                    <span class="text-xs text-muted block">{{ store.gstin }}</span>
+                  </td>
+                  <td>{{ store.commissionRate }}%</td>
+                  <td class="font-bold text-primary">₹{{ store.totalEarnings.toLocaleString() }}</td>
+                  <td>★ {{ store.rating }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Platform Transactions -->
+      <div class="card overflow-hidden">
+        <div class="p-4 bg-muted border-b flex justify-between items-center font-bold text-sm">
+          <span>Recent Customer Orders</span>
+        </div>
+        <div class="table-responsive border-0">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Order #</th>
+                <th>Customer</th>
+                <th>Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (order of recentOrders(); track order.id) {
+                <tr>
+                  <td><strong>#{{ order.orderNumber }}</strong></td>
+                  <td>{{ order.customerName }}</td>
+                  <td class="font-bold">₹{{ order.totalAmount.toLocaleString() }}</td>
+                  <td>
+                    <span class="badge" 
+                      [class.badge-success]="order.paymentStatus === 'PAID'"
+                      [class.badge-warning]="order.paymentStatus === 'PENDING'">
+                      {{ order.paymentStatus }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,137 @@
+<!-- Top Announcement & Quick Links Bar -->
+<div class="top-bar">
+  <div class="container flex justify-between items-center text-xs">
+    <div class="flex items-center gap-3">
+      <span class="announcement">✨ Super Deals: Up to 50% Off Electronics & Fashion! Use code <strong>WELCOME10</strong></span>
+    </div>
+    <div class="top-nav-links flex items-center gap-4 text-xs">
+      <a routerLink="/seller/register" class="top-link">Become a Seller</a>
+      <a routerLink="/orders" class="top-link">Track Orders</a>
+      @if (auth.isAuthenticated()) {
+        <span class="user-chip">Logged in as <strong>{{ auth.currentUser()?.name }}</strong></span>
+        <button (click)="auth.logout()" class="top-link text-danger">Sign Out</button>
+      } @else {
+        <button (click)="auth.openAuthModal()" class="top-link text-primary font-bold">Sign In / Register</button>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Main Navbar -->
+<header class="main-header">
+  <div class="container flex items-center justify-between gap-6">
+    <!-- Brand Logo -->
+    <a routerLink="/" class="brand-logo flex items-center gap-2">
+      <div class="logo-mark">A</div>
+      <div class="logo-text">
+        <span class="logo-name">ApexKart</span>
+        <span class="logo-badge">Marketplace</span>
+      </div>
+    </a>
+
+    <!-- Global Search -->
+    <div class="search-container flex-1">
+      <form (submit)="$event.preventDefault(); onSearch()" class="search-form">
+        <input 
+          type="text" 
+          [(ngModel)]="searchQuery" 
+          name="searchQuery"
+          placeholder="Search 10,000+ products, electronics, fashion, brands..." 
+          class="search-input"
+        />
+        <button type="submit" class="search-btn" aria-label="Search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
+      </form>
+    </div>
+
+    <!-- Navigation Actions -->
+    <div class="nav-actions flex items-center gap-4">
+      <!-- Seller link if not in seller mode -->
+      @if (!auth.isSeller() && !auth.isAdmin()) {
+        <a routerLink="/seller/register" class="seller-cta">
+          Become a Seller
+        </a>
+      }
+
+      <!-- Admin Panel Link -->
+      @if (auth.isAdmin()) {
+        <a routerLink="/admin/dashboard" class="btn btn-outline btn-sm">
+          ⚙️ Admin Console
+        </a>
+      }
+
+      <!-- Seller Panel Link -->
+      @if (auth.isSeller()) {
+        <a routerLink="/seller/dashboard" class="btn btn-outline btn-sm">
+          📊 Seller Portal
+        </a>
+      }
+
+      <!-- User Account Dropdown -->
+      <div class="user-menu-container">
+        @if (auth.isAuthenticated()) {
+          <button type="button" class="user-btn flex items-center gap-2" (click)="toggleDropdown()">
+            <div class="avatar">{{ auth.currentUser()?.name?.charAt(0) || 'U' }}</div>
+            <div class="user-meta text-left">
+              <span class="user-greeting">Hi, {{ auth.currentUser()?.name?.split(' ')?.at(0) }}</span>
+              <span class="user-role">{{ auth.currentUser()?.role }}</span>
+            </div>
+          </button>
+
+          @if (isUserDropdownOpen()) {
+            <div class="dropdown-menu">
+              <div class="dropdown-header">
+                <strong>{{ auth.currentUser()?.name }}</strong>
+                <span class="dropdown-email">{{ auth.currentUser()?.email }}</span>
+              </div>
+              <a routerLink="/orders" (click)="closeDropdown()" class="dropdown-item">📦 My Orders & Tracking</a>
+              <a routerLink="/profile" (click)="closeDropdown()" class="dropdown-item">👤 Profile & Addresses</a>
+              @if (auth.isSeller() || auth.isAdmin()) {
+                <div class="dropdown-divider"></div>
+                <a routerLink="/seller/dashboard" (click)="closeDropdown()" class="dropdown-item">🏬 Seller Dashboard</a>
+              }
+              @if (auth.isAdmin()) {
+                <a routerLink="/admin/dashboard" (click)="closeDropdown()" class="dropdown-item">⚡ Admin Dashboard</a>
+              }
+              <div class="dropdown-divider"></div>
+              <button (click)="auth.logout(); closeDropdown()" class="dropdown-item text-danger">Sign Out</button>
+            </div>
+          }
+        } @else {
+          <button class="btn btn-outline btn-sm" (click)="auth.openAuthModal()">
+            Sign In / Register
+          </button>
+        }
+      </div>
+
+      <!-- Shopping Cart Button with Dynamic Badge -->
+      <button class="cart-trigger" (click)="cart.openCartDrawer()" aria-label="Shopping Cart">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="21" r="1"></circle>
+          <circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+        @if (cart.totalItemsCount() > 0) {
+          <span class="cart-badge">{{ cart.totalItemsCount() }}</span>
+        }
+      </button>
+    </div>
+  </div>
+
+  <!-- Category Strip -->
+  <nav class="categories-bar">
+    <div class="container flex items-center gap-6 overflow-x-auto py-2">
+      <a routerLink="/products" class="cat-pill active">All Categories</a>
+      <a routerLink="/products" [queryParams]="{ category: 'cat-electronics' }" class="cat-pill">📱 Electronics</a>
+      <a routerLink="/products" [queryParams]="{ category: 'cat-fashion' }" class="cat-pill">👕 Fashion & Apparel</a>
+      <a routerLink="/products" [queryParams]="{ category: 'cat-home' }" class="cat-pill">🛋️ Home & Living</a>
+      <a routerLink="/products" [queryParams]="{ category: 'cat-footwear' }" class="cat-pill">👟 Footwear</a>
+      <a routerLink="/products" [queryParams]="{ category: 'cat-beauty' }" class="cat-pill">✨ Beauty</a>
+      <a routerLink="/products" [queryParams]="{ featured: 'true' }" class="cat-pill deals">🔥 Daily Deals</a>
+    </div>
+  </nav>
+</header>

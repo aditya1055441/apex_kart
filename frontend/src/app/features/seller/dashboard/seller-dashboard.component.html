@@ -1,0 +1,124 @@
+<div class="seller-dash-page py-8">
+  <div class="container">
+    <!-- Seller Header -->
+    <div class="dash-header flex justify-between items-center mb-6">
+      <div>
+        <h1 class="page-title text-2xl font-bold">Seller Central Dashboard</h1>
+        <p class="text-xs text-muted">
+          Store: <strong>{{ stats()?.storeName || 'My Vendor Store' }}</strong> | Status: 
+          <span class="badge" [class.badge-success]="stats()?.status === 'ACTIVE'" [class.badge-warning]="stats()?.status !== 'ACTIVE'">
+            {{ stats()?.status || 'PENDING' }}
+          </span>
+        </p>
+      </div>
+
+      <div class="dash-actions flex gap-3">
+        <a routerLink="/seller/products" class="btn btn-primary btn-sm">+ Manage Catalog</a>
+        <a routerLink="/seller/orders" class="btn btn-outline btn-sm">📦 View Orders</a>
+        <a routerLink="/seller/payouts" class="btn btn-outline btn-sm">💰 Payouts</a>
+      </div>
+    </div>
+
+    <!-- KYC Notification Alert -->
+    @if (stats()?.kycStatus !== 'APPROVED') {
+      <div class="alert alert-warning p-4 rounded-lg mb-6 bg-amber-50 text-amber-800 border border-amber-200 flex justify-between items-center text-sm">
+        <div>
+          <strong>KYC Verification Status: {{ stats()?.kycStatus }}</strong>
+          <p class="text-xs mt-0.5">Your tax and identity documents are under compliance review. Once approved, you can list new products.</p>
+        </div>
+        <span class="badge badge-warning">Review Pending</span>
+      </div>
+    }
+
+    <!-- Stat Metrics Cards -->
+    <div class="metrics-grid grid grid-cols-4 gap-6 mb-8">
+      <div class="metric-card card p-5">
+        <span class="text-xs font-bold text-muted uppercase tracking-wider block mb-1">Available Balance</span>
+        <div class="text-2xl font-extrabold text-primary font-display">
+          ₹{{ (stats()?.balance || 0).toLocaleString() }}
+        </div>
+        <span class="text-xs text-muted mt-2 block">Available for bank payout</span>
+      </div>
+
+      <div class="metric-card card p-5">
+        <span class="text-xs font-bold text-muted uppercase tracking-wider block mb-1">Total Sales Revenue</span>
+        <div class="text-2xl font-extrabold text-main font-display">
+          ₹{{ (stats()?.totalEarnings || 0).toLocaleString() }}
+        </div>
+        <span class="text-xs text-success mt-2 block">Commission: {{ stats()?.commissionRate || 10 }}%</span>
+      </div>
+
+      <div class="metric-card card p-5">
+        <span class="text-xs font-bold text-muted uppercase tracking-wider block mb-1">Orders & Fulfillment</span>
+        <div class="text-2xl font-extrabold text-warning font-display">
+          {{ stats()?.pendingShipments || 0 }} Pending
+        </div>
+        <span class="text-xs text-muted mt-2 block">Total Orders: {{ stats()?.totalOrders || 0 }}</span>
+      </div>
+
+      <div class="metric-card card p-5">
+        <span class="text-xs font-bold text-muted uppercase tracking-wider block mb-1">Catalog & Store Rating</span>
+        <div class="text-2xl font-extrabold text-main font-display">
+          ★ {{ stats()?.rating || 5.0 }}
+        </div>
+        <span class="text-xs text-muted mt-2 block">{{ stats()?.totalProducts || 0 }} Active Products Listed</span>
+      </div>
+    </div>
+
+    <!-- Recent Store Orders Section -->
+    <div class="card p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-base">Recent Orders for Your Store</h3>
+        <a routerLink="/seller/orders" class="text-xs text-primary font-bold">Fulfill All Orders →</a>
+      </div>
+
+      @if (recentOrders().length === 0) {
+        <p class="text-center py-8 text-sm text-muted">No orders received yet.</p>
+      } @else {
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Order #</th>
+                <th>Item Purchased</th>
+                <th>Qty</th>
+                <th>Gross Total</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of recentOrders(); track entry.order.id) {
+                @for (item of entry.items; track item.id) {
+                  <tr>
+                    <td><strong>#{{ entry.order.orderNumber }}</strong></td>
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <img [src]="item.image" class="w-8 h-8 rounded object-cover" />
+                        <span>{{ item.productTitle }}</span>
+                      </div>
+                    </td>
+                    <td>{{ item.quantity }}</td>
+                    <td class="font-semibold">₹{{ item.subtotal.toLocaleString() }}</td>
+                    <td>
+                      <span class="badge" 
+                        [class.badge-warning]="item.status === 'PENDING' || item.status === 'PROCESSING'"
+                        [class.badge-info]="item.status === 'SHIPPED'"
+                        [class.badge-success]="item.status === 'DELIVERED'"
+                        [class.badge-danger]="item.status === 'RETURN_REQUESTED'">
+                        {{ item.status }}
+                      </span>
+                    </td>
+                    <td>
+                      <a routerLink="/seller/orders" class="btn btn-outline btn-sm">Manage</a>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+</div>

@@ -1,0 +1,151 @@
+<div class="seller-products-page py-8">
+  <div class="container">
+    <div class="header-row flex justify-between items-center mb-6">
+      <div>
+        <h1 class="page-title text-2xl font-bold">Store Product Catalog</h1>
+        <p class="text-xs text-muted">Manage your marketplace inventory, pricing, variants, and stock</p>
+      </div>
+
+      <button class="btn btn-primary btn-sm" (click)="openAddModal()">
+        + Add New Product
+      </button>
+    </div>
+
+    @if (loading()) {
+      <div class="loading-state text-center py-20">
+        <p class="text-muted">Loading your store catalog...</p>
+      </div>
+    } @else if (products().length === 0) {
+      <div class="card p-12 text-center">
+        <span class="text-4xl block mb-2">🏷️</span>
+        <h3 class="font-bold text-lg mb-1">No products added yet</h3>
+        <p class="text-xs text-muted mb-4">Add your first item to start receiving orders.</p>
+        <button class="btn btn-primary btn-sm" (click)="openAddModal()">Add Product Now</button>
+      </div>
+    } @else {
+      <div class="card overflow-hidden">
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Rating</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of products(); track p.id) {
+                <tr>
+                  <td>
+                    <div class="flex items-center gap-3">
+                      <img [src]="p.images[0]" [alt]="p.title" class="w-10 h-10 object-cover rounded" />
+                      <div>
+                        <strong class="block text-sm line-clamp-1">{{ p.title }}</strong>
+                        <span class="text-xs text-muted">SKU: {{ p.slug.substring(0, 15) }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{{ p.categoryName }}</td>
+                  <td>
+                    <strong class="text-main">₹{{ p.salePrice.toLocaleString() }}</strong>
+                    @if (p.basePrice > p.salePrice) {
+                      <span class="text-xs text-muted line-through block">₹{{ p.basePrice.toLocaleString() }}</span>
+                    }
+                  </td>
+                  <td>
+                    <span [class.text-danger]="p.stock === 0" [class.text-success]="p.stock > 0" class="font-semibold">
+                      {{ p.stock }} units
+                    </span>
+                  </td>
+                  <td>
+                    <span class="text-xs font-bold text-warning">★ {{ p.rating }} ({{ p.numReviews }})</span>
+                  </td>
+                  <td>
+                    <span class="badge" [class.badge-success]="p.status === 'ACTIVE'" [class.badge-danger]="p.status === 'OUT_OF_STOCK'">
+                      {{ p.status }}
+                    </span>
+                  </td>
+                  <td>
+                    <button class="btn btn-outline btn-sm text-danger" (click)="deleteProduct(p.id)">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- Add Product Modal -->
+    @if (isAddModalOpen()) {
+      <div class="modal-backdrop" (click)="closeAddModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3 class="font-bold text-base">Add New Marketplace Product</h3>
+            <button class="close-btn" (click)="closeAddModal()">✕</button>
+          </div>
+          <div class="modal-body max-h-96 overflow-y-auto">
+            @if (errorMsg()) {
+              <div class="badge badge-danger p-2 mb-3 block text-center">{{ errorMsg() }}</div>
+            }
+            <form (submit)="$event.preventDefault(); createProduct()">
+              <div class="form-group">
+                <label class="form-label">Product Title</label>
+                <input type="text" [(ngModel)]="newProd.title" name="title" class="form-control" placeholder="e.g. Wireless Ergonomic Keyboard" required />
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="form-group">
+                  <label class="form-label">Category</label>
+                  <select [(ngModel)]="newProd.categoryId" name="cat" class="form-control">
+                    @for (cat of categories(); track cat.id) {
+                      <option [value]="cat.id">{{ cat.name }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Brand</label>
+                  <input type="text" [(ngModel)]="newProd.brand" name="brand" class="form-control" placeholder="Logitech" />
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-3">
+                <div class="form-group">
+                  <label class="form-label">Base MRP (₹)</label>
+                  <input type="number" [(ngModel)]="newProd.basePrice" name="base" class="form-control" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Sale Price (₹)</label>
+                  <input type="number" [(ngModel)]="newProd.salePrice" name="sale" class="form-control" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Stock Units</label>
+                  <input type="number" [(ngModel)]="newProd.stock" name="stock" class="form-control" required />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Main Image URL</label>
+                <input type="url" [(ngModel)]="newProd.images" name="img" class="form-control" placeholder="https://..." required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea [(ngModel)]="newProd.description" name="desc" class="form-control" rows="3" placeholder="Key features, specifications, and warranty info..."></textarea>
+              </div>
+
+              <div class="modal-footer mt-4">
+                <button type="button" class="btn btn-secondary btn-sm" (click)="closeAddModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-sm" [disabled]="isSubmitting() || !newProd.title.trim()">
+                  {{ isSubmitting() ? 'Publishing...' : 'Publish Product' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

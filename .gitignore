@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment Variables & Credentials (Never commit secrets)
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# Compiled Outputs & Builds
+dist/
+build/
+out-tsc/
+tmp/
+bazel-out/
+
+# Angular Caches
+.angular/
+
+# Testing & Coverage
+coverage/
+*.lcov
+testem.log
+.nyc_output
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+libpeerconnection.log
+
+# IDEs & Editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# OS System Files
+.DS_Store
+Thumbs.db
+
+# Docker Persistent Local Data
+pgdata/

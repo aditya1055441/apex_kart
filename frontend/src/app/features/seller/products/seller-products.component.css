@@ -1,0 +1,12 @@
+.w-10 { width: 2.5rem; }
+.h-10 { height: 2.5rem; }
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.text-danger { color: #dc2626; }
+.text-success { color: #15803d; }
+.text-warning { color: #b45309; }
+.max-h-96 { max-height: 24rem; }

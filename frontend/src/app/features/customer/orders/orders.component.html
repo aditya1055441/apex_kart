@@ -1,0 +1,159 @@
+<div class="orders-page py-8">
+  <div class="container">
+    <div class="orders-header mb-6">
+      <h1 class="page-title text-2xl font-bold">My Orders & Real-time Tracking</h1>
+      <p class="text-xs text-muted">Track parcels, manage cancellations, and request seller returns</p>
+    </div>
+
+    @if (loading()) {
+      <div class="loading-state text-center py-20">
+        <p class="text-muted">Loading your order history...</p>
+      </div>
+    } @else if (orders().length === 0) {
+      <div class="card p-12 text-center max-w-lg mx-auto">
+        <span class="text-4xl block mb-2">📦</span>
+        <h3 class="font-bold text-lg mb-1">No orders placed yet</h3>
+        <p class="text-xs text-muted mb-4">Start discovering verified items from top sellers today.</p>
+        <a routerLink="/products" class="btn btn-primary btn-sm">Explore Catalog</a>
+      </div>
+    } @else {
+      <div class="orders-list flex flex-col gap-6">
+        @for (order of orders(); track order.id) {
+          <div class="order-card card">
+            <!-- Order Meta Header -->
+            <div class="order-header p-4 bg-muted flex flex-wrap justify-between items-center gap-4 border-b">
+              <div class="flex items-center gap-4 text-xs">
+                <div>
+                  <span class="text-muted block">ORDER PLACED</span>
+                  <strong>{{ order.createdAt | date:'mediumDate' }}</strong>
+                </div>
+                <div>
+                  <span class="text-muted block">TOTAL</span>
+                  <strong class="text-primary">₹{{ order.totalAmount.toLocaleString() }}</strong>
+                </div>
+                <div>
+                  <span class="text-muted block">SHIP TO</span>
+                  <strong>{{ order.shippingAddress.fullName }}</strong>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <span class="text-xs font-mono">#{{ order.orderNumber }}</span>
+                <span class="badge" 
+                  [class.badge-primary]="order.status === 'PLACED'"
+                  [class.badge-warning]="order.status === 'PROCESSING'"
+                  [class.badge-info]="order.status === 'SHIPPED'"
+                  [class.badge-success]="order.status === 'DELIVERED'"
+                  [class.badge-danger]="order.status === 'CANCELLED'">
+                  {{ order.status }}
+                </span>
+
+                @if (order.status === 'PLACED' || order.status === 'PROCESSING') {
+                  <button class="btn btn-danger btn-sm" (click)="cancelOrder(order)">
+                    Cancel Order
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Order Stepper Progress -->
+            @if (order.status !== 'CANCELLED') {
+              <div class="tracking-stepper p-6 border-b">
+                <div class="stepper-track flex justify-between relative">
+                  <div class="step" [class.completed]="getStatusStep(order.status) >= 1">
+                    <div class="step-dot">1</div>
+                    <span class="step-text">Placed</span>
+                  </div>
+                  <div class="step" [class.completed]="getStatusStep(order.status) >= 2">
+                    <div class="step-dot">2</div>
+                    <span class="step-text">Processing</span>
+                  </div>
+                  <div class="step" [class.completed]="getStatusStep(order.status) >= 3">
+                    <div class="step-dot">3</div>
+                    <span class="step-text">Shipped</span>
+                  </div>
+                  <div class="step" [class.completed]="getStatusStep(order.status) >= 4">
+                    <div class="step-dot">4</div>
+                    <span class="step-text">Delivered</span>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- Order Items List -->
+            <div class="order-items p-6 flex flex-col gap-4">
+              @for (item of order.items; track item.id) {
+                <div class="order-item-row flex gap-4 items-center">
+                  <img [src]="item.image" [alt]="item.productTitle" class="item-img" />
+                  <div class="flex-1">
+                    <span class="text-xs text-muted">Vendor: <strong>{{ item.storeName }}</strong></span>
+                    <h4 class="font-bold text-sm">{{ item.productTitle }}</h4>
+                    <p class="text-xs text-muted">Qty: {{ item.quantity }} | ₹{{ item.price.toLocaleString() }} each</p>
+
+                    @if (item.trackingNumber) {
+                      <div class="tracking-info text-xs mt-1 text-primary">
+                        🚚 Dispatched via {{ item.courierName || 'Courier' }} — Tracking: <strong>{{ item.trackingNumber }}</strong>
+                      </div>
+                    }
+
+                    @if (item.status === 'RETURN_REQUESTED') {
+                      <div class="badge badge-warning text-xs mt-1">Return Requested</div>
+                    }
+                  </div>
+
+                  <div class="item-total-col text-right">
+                    <span class="font-bold text-base block font-display">₹{{ item.subtotal.toLocaleString() }}</span>
+                    @if ((order.status === 'DELIVERED' || item.status === 'DELIVERED') && item.status !== 'RETURN_REQUESTED' && item.status !== 'RETURNED') {
+                      <button class="btn btn-outline btn-sm mt-2" (click)="openReturnModal(order, item)">
+                        🔄 Return / Refund
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Delivery Address Footer -->
+            <div class="p-4 bg-muted text-xs text-muted flex justify-between items-center">
+              <div>
+                <span>Delivery Address: </span>
+                <strong>{{ order.shippingAddress.addressLine1 }}, {{ order.shippingAddress.city }}, {{ order.shippingAddress.state }} - {{ order.shippingAddress.postalCode }}</strong>
+              </div>
+              <div>
+                <span>Payment: </span>
+                <strong>{{ order.paymentMethod }} ({{ order.paymentStatus }})</strong>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Return Modal -->
+    @if (isReturnModalOpen()) {
+      <div class="modal-backdrop" (click)="closeReturnModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3 class="font-bold text-base">Request Return & Refund</h3>
+            <button class="close-btn" (click)="closeReturnModal()">✕</button>
+          </div>
+          <div class="modal-body">
+            <p class="text-sm mb-4">
+              Item: <strong>{{ activeReturnItem()?.productTitle }}</strong>
+            </p>
+            <div class="form-group">
+              <label class="form-label">Reason for Return</label>
+              <textarea [(ngModel)]="returnReason" class="form-control" rows="3" placeholder="Please describe the issue (e.g. Defective product, wrong size, changed mind)..." required></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary btn-sm" (click)="closeReturnModal()">Cancel</button>
+            <button class="btn btn-primary btn-sm" (click)="submitReturn()" [disabled]="returnSubmitting() || !returnReason.trim()">
+              {{ returnSubmitting() ? 'Submitting...' : 'Submit Request' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

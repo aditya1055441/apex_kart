@@ -1,0 +1,23 @@
+{
+  "name": "apexkart-ecommerce-marketplace",
+  "version": "1.0.0",
+  "description": "Scalable Multi-Vendor E-Commerce Marketplace (Angular + Node.js + PostgreSQL + Razorpay)",
+  "scripts": {
+    "start:backend": "cd backend && npm run dev",
+    "start:frontend": "cd frontend && npm start",
+    "build": "cd backend && npm run build && cd ../frontend && npm run build",
+    "test": "cd backend && npm test",
+    "db:up": "docker-compose up -d"
+  },
+  "keywords": [
+    "ecommerce",
+    "marketplace",
+    "multi-vendor",
+    "angular",
+    "nodejs",
+    "postgresql",
+    "razorpay"
+  ],
+  "author": "ApexKart Team",
+  "license": "MIT"
+}

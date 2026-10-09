@@ -1,0 +1,148 @@
+<div class="catalog-page py-8">
+  <div class="container">
+    <!-- Breadcrumb & Header -->
+    <div class="catalog-header flex justify-between items-center mb-6">
+      <div>
+        <h1 class="page-title text-2xl font-bold">Marketplace Catalog</h1>
+        <p class="text-xs text-muted">Showing {{ products().length }} of {{ total() }} products</p>
+      </div>
+
+      <!-- Sorting Bar -->
+      <div class="sort-bar flex items-center gap-3">
+        <label class="text-xs font-semibold text-muted">Sort By:</label>
+        <select 
+          [(ngModel)]="selectedSort" 
+          (change)="onFilterChange()"
+          class="form-control text-sm sort-select">
+          <option value="newest">Newest Arrivals</option>
+          <option value="price_asc">Price: Low to High</option>
+          <option value="price_desc">Price: High to Low</option>
+          <option value="rating">Customer Rating</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="catalog-layout flex gap-8">
+      <!-- Filter Sidebar -->
+      <aside class="filter-sidebar">
+        <div class="filter-card card p-4">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-sm uppercase tracking-wide">Filters</h3>
+            <button class="text-xs text-primary font-semibold" (click)="clearFilters()">Reset All</button>
+          </div>
+
+          <!-- Category Filter -->
+          <div class="filter-group mb-5">
+            <h4 class="filter-title text-xs font-bold text-muted uppercase mb-2">Category</h4>
+            <div class="filter-options flex flex-col gap-1 text-sm">
+              <label class="filter-radio-label flex items-center gap-2">
+                <input type="radio" name="cat" [checked]="selectedCategory() === ''" (change)="selectedCategory.set(''); onFilterChange()" />
+                <span>All Categories</span>
+              </label>
+              @for (cat of categories(); track cat.id) {
+                <label class="filter-radio-label flex items-center gap-2">
+                  <input type="radio" name="cat" [checked]="selectedCategory() === cat.id" (change)="selectedCategory.set(cat.id); onFilterChange()" />
+                  <span>{{ cat.name }}</span>
+                </label>
+              }
+            </div>
+          </div>
+
+          <!-- Brand Filter -->
+          <div class="filter-group mb-5">
+            <h4 class="filter-title text-xs font-bold text-muted uppercase mb-2">Brand</h4>
+            <div class="filter-options flex flex-col gap-1 text-sm">
+              <label class="filter-radio-label flex items-center gap-2">
+                <input type="radio" name="brand" [checked]="selectedBrand() === ''" (change)="selectedBrand.set(''); onFilterChange()" />
+                <span>All Brands</span>
+              </label>
+              @for (b of brands(); track b.id) {
+                <label class="filter-radio-label flex items-center gap-2">
+                  <input type="radio" name="brand" [checked]="selectedBrand() === b.name" (change)="selectedBrand.set(b.name); onFilterChange()" />
+                  <span>{{ b.name }}</span>
+                </label>
+              }
+            </div>
+          </div>
+
+          <!-- Price Range Filter -->
+          <div class="filter-group mb-4">
+            <h4 class="filter-title text-xs font-bold text-muted uppercase mb-2">Price Limit</h4>
+            <div class="flex items-center justify-between text-xs text-muted mb-2">
+              <span>₹0</span>
+              <span>₹{{ maxPrice().toLocaleString() }}</span>
+            </div>
+            <input 
+              type="range" 
+              min="1000" 
+              max="100000" 
+              step="1000" 
+              [(ngModel)]="maxPrice" 
+              (change)="fetchProducts()" 
+              class="w-full price-slider"
+            />
+          </div>
+        </div>
+      </aside>
+
+      <!-- Products Grid -->
+      <main class="products-main flex-1">
+        @if (loading()) {
+          <div class="loading-state text-center py-20">
+            <div class="spinner"></div>
+            <p class="text-sm text-muted mt-3">Fetching marketplace inventory...</p>
+          </div>
+        } @else if (products().length === 0) {
+          <div class="empty-state text-center py-20 card p-8">
+            <span class="empty-icon text-4xl mb-2 block">🔍</span>
+            <h3 class="font-bold text-lg mb-1">No products found</h3>
+            <p class="text-sm text-muted mb-4">Try adjusting your filters or search keywords.</p>
+            <button class="btn btn-outline btn-sm" (click)="clearFilters()">Clear All Filters</button>
+          </div>
+        } @else {
+          <div class="grid grid-cols-3 gap-6">
+            @for (product of products(); track product.id) {
+              <div class="product-card">
+                <a [routerLink]="['/products', product.id]" class="product-image-wrap">
+                  <img [src]="product.images[0]" [alt]="product.title" loading="lazy" />
+                  @if (product.salePrice < product.basePrice) {
+                    <span class="discount-pill">
+                      {{ ((product.basePrice - product.salePrice) / product.basePrice * 100) | number:'1.0-0' }}% OFF
+                    </span>
+                  }
+                </a>
+
+                <div class="product-info">
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="product-store">{{ product.storeName }}</span>
+                    <span class="product-rating text-xs flex items-center gap-1 font-semibold">
+                      ★ {{ product.rating }} <span class="text-muted">({{ product.numReviews }})</span>
+                    </span>
+                  </div>
+
+                  <a [routerLink]="['/products', product.id]" class="product-title">
+                    {{ product.title }}
+                  </a>
+
+                  <div class="product-price-row">
+                    <div class="flex items-baseline gap-2">
+                      <span class="sale-price">₹{{ product.salePrice.toLocaleString() }}</span>
+                      @if (product.salePrice < product.basePrice) {
+                        <span class="base-price">₹{{ product.basePrice.toLocaleString() }}</span>
+                      }
+                    </div>
+                    <button 
+                      class="btn btn-primary btn-sm add-btn" 
+                      (click)="addToCart(product, $event)">
+                      + Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </main>
+    </div>
+  </div>
+</div>

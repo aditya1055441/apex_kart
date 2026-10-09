@@ -1,0 +1,88 @@
+<div class="seller-reg-page py-10">
+  <div class="container max-w-3xl">
+    <div class="text-center mb-8">
+      <span class="badge badge-primary mb-2">Partner Onboarding</span>
+      <h1 class="text-3xl font-extrabold mb-2">Become an ApexKart Verified Seller</h1>
+      <p class="text-sm text-muted">Submit your business profile and KYC tax details to start selling to millions of shoppers.</p>
+    </div>
+
+    @if (successMessage()) {
+      <div class="badge badge-success p-4 mb-6 block text-center text-sm">
+        {{ successMessage() }}
+      </div>
+    }
+
+    @if (errorMessage()) {
+      <div class="alert alert-danger p-4 rounded mb-6 bg-red-50 text-red-600 border border-red-200 text-sm">
+        {{ errorMessage() }}
+      </div>
+    }
+
+    <form (submit)="$event.preventDefault(); onSubmit()" class="card p-8 flex flex-col gap-6">
+      <!-- Section 1: Store Information -->
+      <div>
+        <h3 class="font-bold text-base mb-3 border-b pb-2">1. Store Brand & Identity</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="form-group col-span-2">
+            <label class="form-label">Store / Brand Name</label>
+            <input type="text" [(ngModel)]="storeData.name" name="name" class="form-control" required />
+          </div>
+          <div class="form-group col-span-2">
+            <label class="form-label">Store Description</label>
+            <textarea [(ngModel)]="storeData.description" name="description" class="form-control" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Store Logo URL</label>
+            <input type="url" [(ngModel)]="storeData.logo" name="logo" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Store Banner Image URL</label>
+            <input type="url" [(ngModel)]="storeData.banner" name="banner" class="form-control" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Tax & KYC Verification -->
+      <div>
+        <h3 class="font-bold text-base mb-3 border-b pb-2">2. Business KYC & Tax Information</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="form-group">
+            <label class="form-label">GSTIN (15-character GST Number)</label>
+            <input type="text" [(ngModel)]="storeData.gstin" name="gstin" class="form-control uppercase" placeholder="29ABCDE1234F1Z5" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">PAN Number (10-character PAN)</label>
+            <input type="text" [(ngModel)]="storeData.pan" name="pan" class="form-control uppercase" placeholder="ABCDE1234F" required />
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Bank Account Details for Payouts -->
+      <div>
+        <h3 class="font-bold text-base mb-3 border-b pb-2">3. Bank Account for Automated Payouts</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="form-group col-span-2">
+            <label class="form-label">Account Beneficiary Name</label>
+            <input type="text" [(ngModel)]="storeData.bankAccount.accountName" name="accName" class="form-control" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Account Number</label>
+            <input type="text" [(ngModel)]="storeData.bankAccount.accountNumber" name="accNum" class="form-control font-mono" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bank IFSC Code</label>
+            <input type="text" [(ngModel)]="storeData.bankAccount.ifsc" name="ifsc" class="form-control font-mono uppercase" required />
+          </div>
+          <div class="form-group col-span-2">
+            <label class="form-label">Bank Name</label>
+            <input type="text" [(ngModel)]="storeData.bankAccount.bankName" name="bankName" class="form-control" required />
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg mt-2" [disabled]="loading()">
+        {{ loading() ? 'Submitting Application...' : 'Submit Seller Application & KYC →' }}
+      </button>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,130 @@
+<div class="seller-orders-page py-8">
+  <div class="container">
+    <div class="header-row flex justify-between items-center mb-6">
+      <div>
+        <h1 class="page-title text-2xl font-bold">Order Fulfillment & Logistics</h1>
+        <p class="text-xs text-muted">Process pending shipments, assign tracking numbers, and manage returns</p>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <div class="loading-state text-center py-20">
+        <p class="text-muted">Loading vendor orders...</p>
+      </div>
+    } @else if (sellerOrders().length === 0) {
+      <div class="card p-12 text-center">
+        <span class="text-4xl block mb-2">📦</span>
+        <h3 class="font-bold text-lg mb-1">No orders to fulfill</h3>
+        <p class="text-xs text-muted">When customers buy your products, they will appear here.</p>
+      </div>
+    } @else {
+      <div class="orders-list flex flex-col gap-6">
+        @for (entry of sellerOrders(); track entry.order.id) {
+          <div class="card overflow-hidden">
+            <div class="p-4 bg-muted border-b flex justify-between items-center text-xs">
+              <div>
+                <span>Order #<strong>{{ entry.order.orderNumber }}</strong></span>
+                <span class="text-muted ml-3">{{ entry.order.createdAt | date:'medium' }}</span>
+              </div>
+              <div>
+                <span>Buyer: <strong>{{ entry.order.customerName }}</strong> ({{ entry.order.customerPhone }})</span>
+                <span class="text-muted ml-3">Destination: {{ entry.order.shippingAddress.city }}, {{ entry.order.shippingAddress.state }}</span>
+              </div>
+            </div>
+
+            <div class="p-6 flex flex-col gap-4">
+              @for (item of entry.items; track item.id) {
+                <div class="flex items-center justify-between border-b pb-4 last:border-b-0 last:pb-0">
+                  <div class="flex items-center gap-4">
+                    <img [src]="item.image" class="w-12 h-12 rounded object-cover" />
+                    <div>
+                      <h4 class="font-bold text-sm">{{ item.productTitle }}</h4>
+                      <p class="text-xs text-muted">Quantity: {{ item.quantity }} | Unit Price: ₹{{ item.price.toLocaleString() }}</p>
+
+                      @if (item.trackingNumber) {
+                        <p class="text-xs text-primary mt-1">
+                          Courier: <strong>{{ item.courierName }}</strong> | Tracking: <strong>{{ item.trackingNumber }}</strong>
+                        </p>
+                      }
+
+                      @if (item.status === 'RETURN_REQUESTED') {
+                        <div class="bg-red-50 text-danger p-2 rounded text-xs mt-2 border border-red-200">
+                          <strong>Return Requested by Buyer:</strong> {{ item.returnReason || 'No reason provided' }}
+                        </div>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="actions-col flex items-center gap-3">
+                    <span class="badge" 
+                      [class.badge-warning]="item.status === 'PENDING' || item.status === 'PROCESSING'"
+                      [class.badge-info]="item.status === 'SHIPPED'"
+                      [class.badge-success]="item.status === 'DELIVERED'"
+                      [class.badge-danger]="item.status === 'RETURN_REQUESTED' || item.status === 'CANCELLED'">
+                      {{ item.status }}
+                    </span>
+
+                    @if (item.status === 'PENDING' || item.status === 'PROCESSING') {
+                      <button class="btn btn-primary btn-sm" (click)="openShipModal(entry.order, item)">
+                        🚚 Mark Shipped
+                      </button>
+                    }
+
+                    @if (item.status === 'SHIPPED') {
+                      <button class="btn btn-success btn-sm text-white" (click)="markDelivered(entry.order, item)">
+                        ✓ Mark Delivered
+                      </button>
+                    }
+
+                    @if (item.status === 'RETURN_REQUESTED') {
+                      <button class="btn btn-primary btn-sm" (click)="approveReturn(entry.order, item)">
+                        Approve Return
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Shipping Modal -->
+    @if (isShipModalOpen()) {
+      <div class="modal-backdrop" (click)="closeShipModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3 class="font-bold text-base">Dispatch & Ship Item</h3>
+            <button class="close-btn" (click)="closeShipModal()">✕</button>
+          </div>
+          <div class="modal-body">
+            <p class="text-sm mb-4">
+              Item: <strong>{{ activeItem()?.productTitle }}</strong>
+            </p>
+            <div class="form-group">
+              <label class="form-label">Logistics Provider / Courier</label>
+              <select [(ngModel)]="courierName" class="form-control">
+                <option value="Blue Dart Express">Blue Dart Express</option>
+                <option value="Delhivery Logistics">Delhivery Logistics</option>
+                <option value="DTDC Express">DTDC Express</option>
+                <option value="Ekart Logistics">Ekart Logistics</option>
+                <option value="Shadowfax">Shadowfax</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Waybill / Tracking Number</label>
+              <input type="text" [(ngModel)]="trackingNumber" class="form-control font-mono" placeholder="BD123456789IN" required />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary btn-sm" (click)="closeShipModal()">Cancel</button>
+            <button class="btn btn-primary btn-sm" (click)="submitShipment()" [disabled]="isSubmitting() || !trackingNumber.trim()">
+              {{ isSubmitting() ? 'Updating...' : 'Confirm Shipment' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

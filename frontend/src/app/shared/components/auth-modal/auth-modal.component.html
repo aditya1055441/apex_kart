@@ -1,0 +1,268 @@
+@if (auth.isAuthModalOpen()) {
+  <div class="modal-backdrop" (click)="auth.closeAuthModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="font-bold text-lg">
+          @if (activeTab() === 'login') { Welcome to ApexKart }
+          @else if (activeTab() === 'otp') { Quick Login with OTP }
+          @else { Create New Account }
+        </h3>
+        <button class="close-btn" (click)="auth.closeAuthModal()">✕</button>
+      </div>
+
+      <!-- Auth Tabs -->
+      <div class="auth-tabs flex border-b">
+        <button class="tab-btn flex-1 py-3" [class.active]="activeTab() === 'login'" (click)="activeTab.set('login')">
+          Password Login
+        </button>
+        <button class="tab-btn flex-1 py-3" [class.active]="activeTab() === 'otp'" (click)="activeTab.set('otp')">
+          OTP Login
+        </button>
+        <button class="tab-btn flex-1 py-3" [class.active]="activeTab() === 'register'" (click)="activeTab.set('register')">
+          Register
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (errorMessage()) {
+          <div class="alert alert-danger mb-4 p-3 rounded text-sm bg-red-50 text-red-600 border border-red-200">
+            {{ errorMessage() }}
+          </div>
+        }
+
+        @if (successMessage()) {
+          <div class="alert alert-success mb-4 p-3 rounded text-sm bg-green-50 text-green-700 border border-green-200">
+            {{ successMessage() }}
+          </div>
+        }
+
+        <!-- PASSWORD LOGIN TAB -->
+        @if (activeTab() === 'login') {
+          <form (submit)="$event.preventDefault(); onPasswordLogin()">
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input type="email" [(ngModel)]="loginEmail" name="email" class="form-control" placeholder="customer@gmail.com" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password</label>
+              <input type="password" [(ngModel)]="loginPassword" name="password" class="form-control" placeholder="••••••••" required />
+            </div>
+            <button type="submit" class="btn btn-primary btn-block btn-lg mt-4" [disabled]="loading()">
+              {{ loading() ? 'Signing in...' : 'Sign In' }}
+            </button>
+          </form>
+
+          <!-- Quick Demo Fill -->
+          <div class="demo-fill-box mt-4 p-3 bg-slate-50 border rounded text-xs">
+            <span class="font-semibold block mb-1">Instant Demo Logins:</span>
+            <div class="flex gap-2">
+              <button type="button" class="btn btn-outline btn-sm" (click)="fillCreds('customer@gmail.com', 'Customer@123')">Customer</button>
+              <button type="button" class="btn btn-outline btn-sm" (click)="fillCreds('seller@apextech.com', 'Seller@123')">Apex Seller</button>
+              <button type="button" class="btn btn-outline btn-sm" (click)="fillCreds('admin@marketplace.com', 'Admin@123')">Admin</button>
+            </div>
+          </div>
+        }
+
+        <!-- OTP LOGIN TAB -->
+        @if (activeTab() === 'otp') {
+          <form (submit)="$event.preventDefault(); onVerifyOtp()">
+            <div class="form-group">
+              <label class="form-label">Mobile Number or Email</label>
+              <div class="flex gap-2">
+                <input type="text" [(ngModel)]="otpPhoneOrEmail" name="otpPhoneOrEmail" class="form-control" placeholder="+919812345678" [disabled]="otpSent()" required />
+                <button type="button" class="btn btn-outline btn-sm" (click)="onSendOtp()" [disabled]="otpSent() || loading()">
+                  {{ otpSent() ? 'Sent' : 'Get OTP' }}
+                </button>
+              </div>
+            </div>
+
+            @if (otpSent()) {
+              <div class="form-group mt-3">
+                <label class="form-label">Enter 6-digit OTP</label>
+                <input type="text" [(ngModel)]="otpCode" name="otpCode" class="form-control text-center tracking-widest text-lg font-bold" placeholder="000000" maxlength="6" required />
+                @if (debugOtp()) {
+                  <p class="text-xs text-primary mt-1 font-semibold">Demo Auto-filled OTP: {{ debugOtp() }}</p>
+                }
+              </div>
+              <button type="submit" class="btn btn-primary btn-block btn-lg mt-4" [disabled]="loading()">
+                {{ loading() ? 'Verifying...' : 'Verify OTP & Continue' }}
+              </button>
+            }
+          </form>
+        }
+
+        <!-- REGISTER TAB (Multi-Step: Email/Mobile -> Code -> Name & DOB -> OK / Register) -->
+        @if (activeTab() === 'register') {
+          <div class="register-flow flex flex-col gap-4">
+            <!-- Method Selection (Email vs Mobile Number) -->
+            @if (!regCodeVerified()) {
+              <div class="method-toggle flex gap-2 p-1 bg-muted rounded-md text-xs font-semibold">
+                <button
+                  type="button"
+                  class="flex-1 py-1.5 rounded text-center transition"
+                  [class.bg-white]="regMethod() === 'email'"
+                  [class.shadow-sm]="regMethod() === 'email'"
+                  (click)="changeRegMethod('email')">
+                  ✉️ Register with Email
+                </button>
+                <button
+                  type="button"
+                  class="flex-1 py-1.5 rounded text-center transition"
+                  [class.bg-white]="regMethod() === 'phone'"
+                  [class.shadow-sm]="regMethod() === 'phone'"
+                  (click)="changeRegMethod('phone')">
+                  📱 Register with Mobile Number
+                </button>
+              </div>
+
+              <!-- Step 1: Supply Email / Phone -->
+              <div class="form-group">
+                <label class="form-label">
+                  {{ regMethod() === 'email' ? 'Email Address' : 'Mobile Phone Number' }}
+                </label>
+                <div class="flex gap-2">
+                  <input
+                    [type]="regMethod() === 'email' ? 'email' : 'tel'"
+                    [(ngModel)]="regIdentifier"
+                    name="regIdentifier"
+                    class="form-control"
+                    [placeholder]="regMethod() === 'email' ? 'e.g. yourname@example.com' : 'e.g. +919876543210'"
+                    [disabled]="regCodeSent()"
+                    required
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-outline btn-sm"
+                    (click)="onSendRegCode()"
+                    [disabled]="regCodeSent() || loading() || !regIdentifier.trim()">
+                    {{ regCodeSent() ? 'Code Sent ✓' : 'Send Code' }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Step 2: Enter Verification Code -->
+              @if (regCodeSent() && !regCodeVerified()) {
+                <div class="code-verification-box p-3 bg-slate-50 border rounded-lg">
+                  <div class="form-group mb-2">
+                    <label class="form-label flex justify-between">
+                      <span>Enter Random Verification Code</span>
+                      @if (debugRegCode()) {
+                        <span class="text-xs text-primary font-bold">Auto-Code: {{ debugRegCode() }}</span>
+                      }
+                    </label>
+                    <input
+                      type="text"
+                      [(ngModel)]="regCode"
+                      name="regCode"
+                      class="form-control text-center tracking-widest font-bold text-lg"
+                      placeholder="000000"
+                      maxlength="6"
+                      required
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-block btn-sm"
+                    (click)="onVerifyRegCode()"
+                    [disabled]="loading() || regCode.length < 4">
+                    {{ loading() ? 'Verifying...' : 'Verify Code & Proceed' }}
+                  </button>
+                </div>
+              }
+            }
+
+            <!-- Step 3: Enter Full Name and DOB (Unlocked after entering correct code) -->
+            @if (regCodeVerified()) {
+              <form (submit)="$event.preventDefault(); onCompleteRegistration()" autocomplete="off" class="flex flex-col gap-3">
+                <!-- Invisible decoy inputs to absorb aggressive browser autofill -->
+                <input type="text" style="display:none;" tabindex="-1" autocomplete="username" />
+                <input type="password" style="display:none;" tabindex="-1" autocomplete="current-password" />
+
+                <!-- Verified Email / Phone Display Field -->
+                <div class="form-group mb-1">
+                  <label class="form-label flex justify-between">
+                    <span>{{ regMethod() === 'email' ? 'Registered Email Address' : 'Registered Mobile Number' }}</span>
+                    <button type="button" class="text-xs text-muted underline" (click)="resetReg()">Change</button>
+                  </label>
+                  <div class="flex items-center gap-2">
+                    <input 
+                      type="text" 
+                      [value]="regIdentifier" 
+                      class="form-control bg-slate-100 font-semibold text-slate-700" 
+                      readonly 
+                      disabled 
+                    />
+                    <span class="badge badge-success whitespace-nowrap">✓ Verified</span>
+                  </div>
+                  <span class="text-xs text-muted mt-0.5">This verified {{ regMethod() === 'email' ? 'email' : 'phone number' }} will be your login account.</span>
+                </div>
+
+                <!-- Mandatory Full Name Field (Empty by default) -->
+                <div class="form-group mb-1">
+                  <label class="form-label">Full Name *</label>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="regFullName" 
+                    name="applicantPersonalFullName" 
+                    id="applicantPersonalFullName"
+                    autocomplete="new-password"
+                    class="form-control" 
+                    placeholder="Enter your full name (e.g. Aditya Anand)" 
+                    required 
+                  />
+                  <p class="text-xs text-muted mt-1">Please enter your personal name (not an email address).</p>
+                </div>
+
+                <!-- Date of Birth Field -->
+                <div class="form-group mb-1">
+                  <label class="form-label">Date of Birth (DOB) *</label>
+                  <input 
+                    type="date" 
+                    [(ngModel)]="regDob" 
+                    name="dob" 
+                    class="form-control" 
+                    required 
+                  />
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-group mb-1">
+                  <label class="form-label">Password *</label>
+                  <input 
+                    type="password" 
+                    [(ngModel)]="regPassword" 
+                    name="accountSecretKey" 
+                    id="accountSecretKey"
+                    autocomplete="new-password"
+                    class="form-control" 
+                    placeholder="e.g. SecurePass@2026" 
+                    required 
+                  />
+                  <p class="text-xs text-muted mt-1">
+                    Must contain at least 8 characters with uppercase (A-Z), lowercase (a-z), and special character (!&#64;#$%^&*...).
+                  </p>
+                </div>
+
+                <!-- Account Role -->
+                <div class="form-group mb-1">
+                  <label class="form-label">Account Role</label>
+                  <select [(ngModel)]="regRole" name="role" class="form-control text-sm">
+                    <option value="CUSTOMER">Customer (Buy on ApexKart)</option>
+                    <option value="SELLER">Seller (Sell on ApexKart)</option>
+                  </select>
+                </div>
+
+                <button 
+                  type="submit" 
+                  class="btn btn-primary btn-block btn-lg mt-2 font-bold" 
+                  [disabled]="loading() || !regFullName.trim() || !regDob || !regPassword.trim()">
+                  {{ loading() ? 'Registering...' : 'OK / Register' }}
+                </button>
+              </form>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}

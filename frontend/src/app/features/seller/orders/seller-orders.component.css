@@ -1,0 +1,10 @@
+.w-12 { width: 3rem; }
+.h-12 { height: 3rem; }
+.btn-success { background: #10b981; }
+.btn-success:hover { background: #059669; }
+.text-white { color: #ffffff; }
+.font-mono { font-family: monospace; }
+.border-b { border-bottom: 1px solid var(--border); }
+.bg-red-50 { background-color: #fef2f2; }
+.border-red-200 { border-color: #fecaca; }
+.text-danger { color: #dc2626; }

@@ -1,0 +1,72 @@
+.filter-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+}
+
+.sort-select {
+  width: auto;
+  min-width: 170px;
+}
+
+.filter-card {
+  position: sticky;
+  top: 90px;
+}
+
+.filter-radio-label {
+  cursor: pointer;
+  padding: 0.25rem 0;
+  color: var(--text-main);
+  transition: color 0.2s;
+}
+
+.filter-radio-label:hover {
+  color: var(--primary);
+}
+
+.price-slider {
+  accent-color: var(--primary);
+}
+
+.discount-pill {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  z-index: 2;
+}
+
+.product-rating {
+  color: #f59e0b;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 860px) {
+  .catalog-layout {
+    flex-direction: column;
+  }
+  .filter-sidebar {
+    width: 100%;
+  }
+  .filter-card {
+    position: static;
+  }
+}

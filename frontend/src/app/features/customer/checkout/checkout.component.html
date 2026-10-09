@@ -1,0 +1,211 @@
+<div class="checkout-page py-8">
+  <div class="container">
+    @if (orderSuccess()) {
+      <!-- Order Placed Success Confirmation Screen -->
+      <div class="order-confirmed-card card p-8 text-center max-w-xl mx-auto my-12">
+        <div class="success-icon mb-4">🎉</div>
+        <h1 class="text-3xl font-extrabold mb-2 text-main">Order Successfully Placed!</h1>
+        <p class="text-muted mb-4">
+          Thank you for shopping with ApexKart. Your multi-vendor order has been dispatched to the respective sellers.
+        </p>
+
+        <div class="order-info-box p-4 bg-muted rounded-lg text-left text-sm mb-6">
+          <div class="flex justify-between py-1 border-b">
+            <span class="text-muted">Order Number:</span>
+            <strong>#{{ orderSuccess()!.orderNumber }}</strong>
+          </div>
+          <div class="flex justify-between py-1 border-b">
+            <span class="text-muted">Total Amount:</span>
+            <strong class="text-primary font-display">₹{{ orderSuccess()!.totalAmount.toLocaleString() }}</strong>
+          </div>
+          <div class="flex justify-between py-1 border-b">
+            <span class="text-muted">Payment Method:</span>
+            <span>{{ orderSuccess()!.paymentMethod }}</span>
+          </div>
+          <div class="flex justify-between py-1">
+            <span class="text-muted">Payment Status:</span>
+            <span class="badge" [class.badge-success]="orderSuccess()!.paymentStatus === 'PAID'" [class.badge-warning]="orderSuccess()!.paymentStatus === 'PENDING'">
+              {{ orderSuccess()!.paymentStatus }}
+            </span>
+          </div>
+        </div>
+
+        <div class="flex gap-4 justify-center">
+          <a routerLink="/orders" class="btn btn-primary btn-lg">
+            Track Your Order →
+          </a>
+          <a routerLink="/products" class="btn btn-outline btn-lg">
+            Continue Shopping
+          </a>
+        </div>
+      </div>
+    } @else {
+      <!-- Standard Checkout Layout -->
+      <h1 class="page-title text-2xl font-bold mb-6">Secure Checkout</h1>
+
+      @if (!auth.isAuthenticated()) {
+        <div class="card p-4 mb-6 bg-amber-50 border border-amber-200 flex justify-between items-center text-sm">
+          <div>
+            <strong class="text-amber-800">Returning customer?</strong>
+            <p class="text-xs text-muted mt-0.5">Sign in to automatically load your saved addresses and order tracking.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" (click)="auth.openAuthModal()">Sign In / Register</button>
+        </div>
+      }
+
+      @if (errorMessage()) {
+        <div class="alert alert-danger p-4 rounded-md mb-6 bg-red-50 text-red-600 border border-red-200">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <div class="checkout-grid grid grid-cols-3 gap-8">
+        <!-- Left: Form Steps -->
+        <div class="checkout-forms col-span-2 flex flex-col gap-6">
+          <!-- Step 1: Shipping Address -->
+          <div class="card p-6">
+            <h2 class="font-bold text-lg mb-4 flex items-center gap-2">
+              <span class="step-num">1</span> Delivery Address
+            </h2>
+
+            <!-- Existing Saved Address radio list -->
+            @if (savedAddresses().length > 0) {
+              <div class="saved-addresses-list mb-4 flex flex-col gap-2">
+                @for (addr of savedAddresses(); track addr.id) {
+                  <label class="address-radio-box p-3 border rounded-lg flex gap-3 cursor-pointer" [class.selected]="selectedAddressId() === addr.id">
+                    <input type="radio" name="addr" [checked]="selectedAddressId() === addr.id" (change)="selectedAddressId.set(addr.id!)" />
+                    <div>
+                      <strong>{{ addr.fullName }}</strong> ({{ addr.phone }})
+                      <p class="text-xs text-muted">{{ addr.addressLine1 }}, {{ addr.addressLine2 }}, {{ addr.city }}, {{ addr.state }} - {{ addr.postalCode }}</p>
+                    </div>
+                  </label>
+                }
+                <label class="address-radio-box p-3 border rounded-lg flex gap-3 cursor-pointer" [class.selected]="selectedAddressId() === 'new'">
+                  <input type="radio" name="addr" [checked]="selectedAddressId() === 'new'" (change)="selectedAddressId.set('new')" />
+                  <span>+ Add a New Address</span>
+                </label>
+              </div>
+            }
+
+            @if (selectedAddressId() === 'new') {
+              <div class="new-address-form grid grid-cols-2 gap-4">
+                <div class="form-group">
+                  <label class="form-label">Full Name</label>
+                  <input type="text" [(ngModel)]="newAddress.fullName" class="form-control" placeholder="e.g. Alex Morgan" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Phone Number</label>
+                  <input type="tel" [(ngModel)]="newAddress.phone" class="form-control" placeholder="e.g. +919876543210" required />
+                </div>
+                <div class="form-group col-span-2">
+                  <label class="form-label">Address Line 1</label>
+                  <input type="text" [(ngModel)]="newAddress.addressLine1" class="form-control" placeholder="House/Flat No., Building Name, Street" required />
+                </div>
+                <div class="form-group col-span-2">
+                  <label class="form-label">Landmark / Line 2 (Optional)</label>
+                  <input type="text" [(ngModel)]="newAddress.addressLine2" class="form-control" placeholder="Near landmark or cross street" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">City</label>
+                  <input type="text" [(ngModel)]="newAddress.city" class="form-control" placeholder="e.g. Mumbai" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">State</label>
+                  <input type="text" [(ngModel)]="newAddress.state" class="form-control" placeholder="e.g. Maharashtra" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">PIN / Postal Code</label>
+                  <input type="text" [(ngModel)]="newAddress.postalCode" class="form-control" placeholder="e.g. 400001" required />
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Step 2: Payment Method -->
+          <div class="card p-6">
+            <h2 class="font-bold text-lg mb-4 flex items-center gap-2">
+              <span class="step-num">2</span> Payment Method
+            </h2>
+
+            <div class="payment-methods flex flex-col gap-3">
+              <label class="payment-option p-4 border rounded-lg flex items-center gap-3 cursor-pointer" [class.selected]="paymentMethod() === 'RAZORPAY'">
+                <input type="radio" name="pay" [checked]="paymentMethod() === 'RAZORPAY'" (change)="paymentMethod.set('RAZORPAY')" />
+                <div class="flex-1">
+                  <strong>Razorpay Payment Gateway (Instant Online)</strong>
+                  <p class="text-xs text-muted">Pay securely via UPI (Google Pay, PhonePe, Paytm), Debit/Credit Cards, or NetBanking</p>
+                </div>
+                <span class="badge badge-primary">Recommended</span>
+              </label>
+
+              <label class="payment-option p-4 border rounded-lg flex items-center gap-3 cursor-pointer" [class.selected]="paymentMethod() === 'COD'">
+                <input type="radio" name="pay" [checked]="paymentMethod() === 'COD'" (change)="paymentMethod.set('COD')" />
+                <div>
+                  <strong>Cash on Delivery (COD)</strong>
+                  <p class="text-xs text-muted">Pay in cash or UPI QR upon home delivery</p>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Order Summary -->
+        <div class="checkout-summary-col">
+          <div class="card p-6 sticky top-20">
+            <h3 class="font-bold text-base mb-4">Order Summary ({{ cart.totalItemsCount() }} items)</h3>
+
+            <!-- Mini Cart Items Preview -->
+            <div class="summary-items-list mb-4 max-h-56 overflow-y-auto">
+              @for (item of cart.items(); track item.id) {
+                <div class="flex items-center gap-3 py-2 border-b text-xs">
+                  <img [src]="item.image" [alt]="item.title" class="w-10 h-10 object-cover rounded" />
+                  <div class="flex-1">
+                    <strong class="block line-clamp-1">{{ item.title }}</strong>
+                    <span class="text-muted">Qty: {{ item.quantity }} × ₹{{ item.price.toLocaleString() }}</span>
+                  </div>
+                  <span class="font-bold">₹{{ (item.quantity * item.price).toLocaleString() }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- Price Breakdown -->
+            <div class="price-breakdown text-sm flex flex-col gap-2">
+              <div class="flex justify-between">
+                <span class="text-muted">Subtotal</span>
+                <span>₹{{ cart.summary().subtotal.toLocaleString() }}</span>
+              </div>
+              @if (cart.summary().discount > 0) {
+                <div class="flex justify-between text-success">
+                  <span>Coupon Discount ({{ cart.appliedCoupon()?.code }})</span>
+                  <span>-₹{{ cart.summary().discount.toLocaleString() }}</span>
+                </div>
+              }
+              <div class="flex justify-between">
+                <span class="text-muted">Estimated Tax (18% GST)</span>
+                <span>₹{{ cart.summary().tax.toLocaleString() }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-muted">Shipping & Handling</span>
+                <span>{{ cart.summary().shippingFee === 0 ? 'FREE' : '₹' + cart.summary().shippingFee }}</span>
+              </div>
+              <div class="flex justify-between py-3 border-t font-extrabold text-lg">
+                <span>Total Payable</span>
+                <span class="text-primary font-display">₹{{ cart.summary().total.toLocaleString() }}</span>
+              </div>
+            </div>
+
+            <button 
+              class="btn btn-primary btn-block btn-lg mt-4" 
+              (click)="placeOrder()" 
+              [disabled]="isSubmitting() || cart.items().length === 0">
+              {{ isSubmitting() ? 'Securing Payment...' : (paymentMethod() === 'RAZORPAY' ? 'Pay with Razorpay →' : 'Confirm Order (COD) →') }}
+            </button>
+
+            <p class="text-center text-xs text-muted mt-3">
+              🔒 256-Bit SSL Encrypted & PCI-DSS Compliant Gateway
+            </p>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

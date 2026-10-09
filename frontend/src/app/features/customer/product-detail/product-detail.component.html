@@ -1,0 +1,202 @@
+<div class="product-detail-page py-8">
+  <div class="container">
+    @if (loading()) {
+      <div class="loading-state text-center py-20">
+        <p class="text-muted">Loading product details...</p>
+      </div>
+    } @else if (product()) {
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb text-xs text-muted mb-6 flex gap-2">
+        <a routerLink="/">Home</a> <span>/</span>
+        <a routerLink="/products" [queryParams]="{ category: product()!.categoryId }">{{ product()!.categoryName }}</a> <span>/</span>
+        <span class="text-main font-semibold">{{ product()!.title }}</span>
+      </nav>
+
+      <!-- Main PDP Grid -->
+      <div class="pdp-grid grid grid-cols-2 gap-12">
+        <!-- Left: Image Gallery -->
+        <div class="gallery-col">
+          <div class="main-image-wrap card">
+            <img [src]="selectedImage()" [alt]="product()!.title" class="main-img" />
+          </div>
+          @if (product()!.images.length > 1) {
+            <div class="thumbnails-row flex gap-3 mt-4">
+              @for (img of product()!.images; track img) {
+                <button 
+                  type="button" 
+                  class="thumb-btn" 
+                  [class.active]="selectedImage() === img" 
+                  (click)="selectedImage.set(img)">
+                  <img [src]="img" [alt]="product()!.title" />
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Right: Purchase & Details Column -->
+        <div class="info-col">
+          <div class="store-badge mb-2 flex items-center justify-between">
+            <span class="badge badge-primary">Sold by {{ product()!.storeName }}</span>
+            <span class="stock-status font-semibold text-xs" [class.text-success]="product()!.stock > 0" [class.text-danger]="product()!.stock === 0">
+              {{ product()!.stock > 0 ? 'In Stock (' + product()!.stock + ' units)' : 'Out of Stock' }}
+            </span>
+          </div>
+
+          <h1 class="pdp-title text-3xl font-extrabold mb-2">{{ product()!.title }}</h1>
+
+          <!-- Rating review summary -->
+          <div class="rating-row flex items-center gap-3 mb-4">
+            <span class="rating-stars font-bold text-sm text-warning">★ {{ product()!.rating }}</span>
+            <span class="text-xs text-muted">({{ reviews().length }} customer reviews)</span>
+            <span class="text-xs text-muted">|</span>
+            <span class="text-xs text-muted">Brand: <strong>{{ product()!.brand }}</strong></span>
+          </div>
+
+          <!-- Price Box -->
+          <div class="price-box p-4 bg-muted rounded-lg mb-6 flex items-baseline gap-3">
+            <span class="current-price text-3xl font-black text-primary font-display">
+              ₹{{ getCurrentPrice().toLocaleString() }}
+            </span>
+            @if (product()!.basePrice > getCurrentPrice()) {
+              <span class="base-price text-lg text-light line-through">
+                ₹{{ product()!.basePrice.toLocaleString() }}
+              </span>
+              <span class="discount-tag">
+                {{ ((product()!.basePrice - getCurrentPrice()) / product()!.basePrice * 100) | number:'1.0-0' }}% OFF
+              </span>
+            }
+          </div>
+
+          <!-- Variants Selector (e.g. Size, Color) -->
+          @if (product()!.variants.length > 0) {
+            <div class="variants-box mb-6">
+              <label class="form-label mb-2 block">Choose Variant / Edition:</label>
+              <div class="variant-chips flex flex-wrap gap-2">
+                @for (variant of product()!.variants; track variant.id) {
+                  <button 
+                    type="button" 
+                    class="variant-btn" 
+                    [class.active]="selectedVariant()?.id === variant.id"
+                    (click)="selectVariant(variant)">
+                    <span>{{ variant.title }}</span>
+                    <span class="variant-price text-xs text-muted">₹{{ variant.price.toLocaleString() }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Quantity & Action Buttons -->
+          <div class="purchase-actions flex gap-4 items-center mb-8">
+            <div class="qty-control flex items-center">
+              <button class="qty-btn" (click)="quantity.set(quantity() > 1 ? quantity() - 1 : 1)">-</button>
+              <span class="qty-val">{{ quantity() }}</span>
+              <button class="qty-btn" (click)="quantity.set(quantity() + 1)">+</button>
+            </div>
+
+            <button class="btn btn-outline btn-lg flex-1" (click)="addToCart()" [disabled]="product()!.stock === 0">
+              🛒 Add to Cart
+            </button>
+            <button class="btn btn-primary btn-lg flex-1" (click)="buyNow()" [disabled]="product()!.stock === 0">
+              ⚡ Buy Now
+            </button>
+          </div>
+
+          <!-- Description -->
+          <div class="pdp-description mb-6">
+            <h3 class="font-bold text-base mb-2">Description & Specifications</h3>
+            <p class="text-sm text-muted leading-relaxed mb-4">{{ product()!.description }}</p>
+
+            @if (product()!.attributes.length > 0) {
+              <div class="specs-table text-sm">
+                @for (attr of product()!.attributes; track attr.key) {
+                  <div class="spec-row flex justify-between py-1.5 border-b">
+                    <span class="text-muted">{{ attr.key }}</span>
+                    <span class="font-semibold">{{ attr.value }}</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Seller Credentials Card -->
+          @if (store()) {
+            <div class="seller-card p-4 border rounded-lg bg-surface flex items-center justify-between mb-8">
+              <div>
+                <span class="text-xs text-muted block">Marketplace Seller</span>
+                <strong class="text-base text-main">{{ store().name }}</strong>
+                <p class="text-xs text-muted mt-0.5">Rating: ★ {{ store().rating }} ({{ store().totalReviews }} ratings)</p>
+              </div>
+              <span class="badge badge-success">KYC Verified</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Customer Reviews Section -->
+      <section class="reviews-section mt-16 pt-10 border-t">
+        <h2 class="section-title text-2xl font-bold mb-6">Customer Reviews & Ratings</h2>
+
+        <div class="reviews-grid grid grid-cols-3 gap-8">
+          <!-- Add Review Form -->
+          <div class="add-review-box card p-6">
+            <h3 class="font-bold text-lg mb-3">Write a Review</h3>
+            @if (reviewSuccessMsg()) {
+              <div class="badge badge-success mb-3 p-2 block text-center">{{ reviewSuccessMsg() }}</div>
+            }
+            <form (submit)="$event.preventDefault(); submitReview()">
+              <div class="form-group">
+                <label class="form-label">Rating</label>
+                <select [(ngModel)]="newReviewRating" name="rating" class="form-control">
+                  <option [value]="5">⭐⭐⭐⭐⭐ 5 - Excellent</option>
+                  <option [value]="4">⭐⭐⭐⭐ 4 - Very Good</option>
+                  <option [value]="3">⭐⭐⭐ 3 - Average</option>
+                  <option [value]="2">⭐⭐ 2 - Poor</option>
+                  <option [value]="1">⭐ 1 - Terrible</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Headline / Title</label>
+                <input type="text" [(ngModel)]="newReviewTitle" name="title" class="form-control" placeholder="What was great about it?" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Review Details</label>
+                <textarea [(ngModel)]="newReviewComment" name="comment" class="form-control" rows="3" placeholder="Share your experience with this product..." required></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary btn-block" [disabled]="reviewSubmitting()">
+                {{ reviewSubmitting() ? 'Submitting...' : 'Post Review' }}
+              </button>
+            </form>
+          </div>
+
+          <!-- Reviews List -->
+          <div class="reviews-list-col col-span-2 flex flex-col gap-4">
+            @if (reviews().length === 0) {
+              <div class="card p-6 text-center text-muted">
+                No reviews yet. Be the first to review this product!
+              </div>
+            } @else {
+              @for (rev of reviews(); track rev.id) {
+                <div class="review-item card p-4">
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="font-bold text-sm text-warning">★ {{ rev.rating }}.0</span>
+                    <span class="text-xs text-muted">{{ rev.createdAt | date:'mediumDate' }}</span>
+                  </div>
+                  <h4 class="font-semibold text-sm mb-1">{{ rev.title }}</h4>
+                  <p class="text-xs text-muted leading-normal mb-2">{{ rev.comment }}</p>
+                  <div class="flex items-center gap-2 text-xs text-muted">
+                    <span>By {{ rev.customerName }}</span>
+                    @if (rev.verifiedPurchase) {
+                      <span class="badge badge-success text-xs">Verified Purchase</span>
+                    }
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </div>
+      </section>
+    }
+  </div>
+</div>
