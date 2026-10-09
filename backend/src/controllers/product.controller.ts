@@ -50,12 +50,7 @@ export const getProducts = async (req: Request, res: Response) => {
 export const getProductById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    let product = await db.getProductById(id);
-
-    // If not found by ID, try finding by slug
-    if (!product) {
-      product = Array.from(db.products.values()).find(p => p.slug === id);
-    }
+    const product = await db.getProductById(id);
 
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });

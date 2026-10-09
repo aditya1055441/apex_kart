@@ -59,6 +59,26 @@
         </div>
       }
 
+      @if (pendingOrder()) {
+        <div class="card p-6 mb-6 bg-amber-50 border border-amber-300 rounded-xl shadow-sm">
+          <div class="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <span class="badge badge-warning mb-1">Payment Pending</span>
+              <h3 class="font-bold text-lg text-amber-950">Order #{{ pendingOrder()?.orderNumber }} is reserved!</h3>
+              <p class="text-xs text-muted mt-1">
+                Amount Payable: <strong class="text-primary font-display text-base">₹{{ pendingOrder()?.totalAmount?.toLocaleString() }}</strong>
+              </p>
+              <p class="text-xs text-amber-800 mt-1">
+                Your payment was cancelled or closed. Click below to resume and complete your payment.
+              </p>
+            </div>
+            <button class="btn btn-primary btn-lg" (click)="resumePendingPayment()" [disabled]="isSubmitting()">
+              {{ isSubmitting() ? 'Opening Razorpay...' : '💳 Resume Payment Now →' }}
+            </button>
+          </div>
+        </div>
+      }
+
       <div class="checkout-grid grid grid-cols-3 gap-8">
         <!-- Left: Form Steps -->
         <div class="checkout-forms col-span-2 flex flex-col gap-6">

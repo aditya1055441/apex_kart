@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { razorpayService } from '../services/razorpay.service';
 import { db } from '../database/db';
+import { AuthenticatedRequest } from '../middleware/auth';
 
 export const getRazorpayConfig = async (req: Request, res: Response) => {
   return res.json({
@@ -69,16 +70,68 @@ export const handleRazorpayWebhook = async (req: Request, res: Response) => {
       const paymentEntity = req.body?.payload?.payment?.entity;
       const rzpOrderId = paymentEntity?.order_id;
       if (rzpOrderId) {
-        const order = Array.from(db.orders.values()).find(o => o.razorpayOrderId === rzpOrderId);
+        const order = await db.findOrderByRazorpayOrderId(rzpOrderId);
         if (order && order.paymentStatus !== 'PAID') {
-          order.paymentStatus = 'PAID';
-          order.status = 'PROCESSING';
-          order.razorpayPaymentId = paymentEntity.id;
+          await db.updateOrderStatus(order.id, 'PROCESSING', 'PAID');
         }
       }
     }
 
     return res.json({ status: 'ok' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const retryOrderPayment = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { orderId } = req.params;
+    const order = await db.getOrderById(orderId);
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (order.customerId !== req.user!.id && req.user!.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+
+    if (order.paymentStatus === 'PAID') {
+      return res.status(400).json({ success: false, message: 'Order has already been paid for' });
+    }
+
+    if (order.status === 'CANCELLED') {
+      return res.status(400).json({ success: false, message: 'Cannot resume payment for a cancelled order' });
+    }
+
+    let razorpayOrderId = order.razorpayOrderId;
+
+    // If order didn't have a razorpayOrderId or it needs renewal, create one
+    if (!razorpayOrderId) {
+      const rzpOrder = await razorpayService.createOrder({
+        amount: order.totalAmount,
+        receipt: order.orderNumber,
+        notes: {
+          orderId: order.id,
+          customerId: order.customerId
+        }
+      });
+      razorpayOrderId = rzpOrder.id;
+      order.razorpayOrderId = razorpayOrderId;
+      await db.updateOrderStatus(order.id, order.status, order.paymentStatus);
+    }
+
+    return res.json({
+      success: true,
+      message: 'Razorpay session ready for retry',
+      order,
+      razorpay: {
+        orderId: razorpayOrderId,
+        amount: Math.round(order.totalAmount * 100),
+        currency: 'INR',
+        keyId: razorpayService.getKeyId()
+      }
+    });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
   }

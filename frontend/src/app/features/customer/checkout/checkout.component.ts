@@ -27,6 +27,8 @@ export class CheckoutComponent implements OnInit {
   public paymentMethod = signal<'RAZORPAY' | 'COD'>('RAZORPAY');
   public isSubmitting = signal<boolean>(false);
   public orderSuccess = signal<Order | null>(null);
+  public pendingOrder = signal<Order | null>(null);
+  public pendingRazorpay = signal<any>(null);
   public errorMessage = signal<string>('');
 
   // New Address form pre-populated dynamically
@@ -112,6 +114,9 @@ export class CheckoutComponent implements OnInit {
       next: res => {
         if (res.success) {
           if (this.paymentMethod() === 'RAZORPAY' && res.razorpay) {
+            this.pendingOrder.set(res.order);
+            this.pendingRazorpay.set(res.razorpay);
+            this.cart.clearCart();
             this.launchRazorpay(res.order, res.razorpay);
           } else {
             // Cash on Delivery
@@ -126,6 +131,14 @@ export class CheckoutComponent implements OnInit {
         this.errorMessage.set(err.error?.message || 'Failed to place order');
       }
     });
+  }
+
+  resumePendingPayment() {
+    if (this.pendingOrder() && this.pendingRazorpay()) {
+      this.isSubmitting.set(true);
+      this.errorMessage.set('');
+      this.launchRazorpay(this.pendingOrder()!, this.pendingRazorpay()!);
+    }
   }
 
   launchRazorpay(order: Order, rzpConfig: any) {
@@ -154,6 +167,8 @@ export class CheckoutComponent implements OnInit {
         }).subscribe({
           next: verifyRes => {
             this.isSubmitting.set(false);
+            this.pendingOrder.set(null);
+            this.pendingRazorpay.set(null);
             this.orderSuccess.set(verifyRes.order);
             this.cart.clearCart();
           },
@@ -166,7 +181,7 @@ export class CheckoutComponent implements OnInit {
       modal: {
         ondismiss: () => {
           this.isSubmitting.set(false);
-          this.errorMessage.set('Payment was cancelled. You can retry anytime.');
+          this.errorMessage.set('Payment was cancelled or closed. You can resume and complete your payment below.');
         }
       }
     };

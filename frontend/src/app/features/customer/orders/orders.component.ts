@@ -6,6 +6,8 @@ import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Order, OrderItem } from '../../../core/models';
 
+declare var Razorpay: any;
+
 @Component({
   selector: 'app-orders',
   standalone: true,
@@ -19,6 +21,7 @@ export class OrdersComponent implements OnInit {
 
   public orders = signal<Order[]>([]);
   public loading = signal<boolean>(true);
+  public isPayingOrderId = signal<string | null>(null);
 
   // Return modal
   public isReturnModalOpen = signal<boolean>(false);
@@ -55,6 +58,94 @@ export class OrdersComponent implements OnInit {
     });
   }
 
+  resumePaymentForOrder(order: Order) {
+    this.isPayingOrderId.set(order.id);
+    this.api.post<{ success: boolean; order: Order; razorpay: any }>(`/payments/orders/${order.id}/retry`, {}).subscribe({
+      next: res => {
+        if (res.success && res.razorpay) {
+          this.launchRazorpayForOrder(res.order, res.razorpay);
+        } else {
+          this.isPayingOrderId.set(null);
+        }
+      },
+      error: err => {
+        this.isPayingOrderId.set(null);
+        alert(err.error?.message || 'Unable to resume payment for this order');
+      }
+    });
+  }
+
+  launchRazorpayForOrder(order: Order, rzpConfig: any) {
+    const options = {
+      key: rzpConfig.keyId,
+      amount: rzpConfig.amount,
+      currency: rzpConfig.currency || 'INR',
+      name: 'ApexKart Marketplace',
+      description: `Payment for Order #${order.orderNumber}`,
+      order_id: rzpConfig.orderId,
+      prefill: {
+        name: order.customerName,
+        email: order.customerEmail,
+        contact: order.customerPhone
+      },
+      theme: {
+        color: '#4f46e5'
+      },
+      handler: (response: any) => {
+        this.api.post<{ success: boolean; order: Order }>('/payments/verify', {
+          orderId: order.id,
+          razorpayOrderId: response.razorpay_order_id,
+          razorpayPaymentId: response.razorpay_payment_id,
+          razorpaySignature: response.razorpay_signature || 'mock_signature'
+        }).subscribe({
+          next: () => {
+            this.isPayingOrderId.set(null);
+            this.loadOrders();
+            alert(`Payment of ₹${order.totalAmount.toLocaleString()} completed successfully! Your order is now being processed.`);
+          },
+          error: () => {
+            this.isPayingOrderId.set(null);
+            alert('Payment captured, but signature verification failed. Please contact support.');
+          }
+        });
+      },
+      modal: {
+        ondismiss: () => {
+          this.isPayingOrderId.set(null);
+        }
+      }
+    };
+
+    try {
+      if (typeof Razorpay !== 'undefined') {
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', (response: any) => {
+          this.isPayingOrderId.set(null);
+          alert(response.error?.description || 'Payment was declined or failed.');
+        });
+        rzp.open();
+      } else {
+        const confirmed = confirm(`[Razorpay Sandbox Gateway]\nAmount: ₹${order.totalAmount.toLocaleString()}\nOrder ID: ${rzpConfig.orderId}\n\nClick OK to simulate Successful Payment.`);
+        if (confirmed) {
+          this.api.post('/payments/verify', {
+            orderId: order.id,
+            razorpayOrderId: rzpConfig.orderId,
+            razorpayPaymentId: 'pay_sim_' + Date.now(),
+            razorpaySignature: 'sig'
+          }).subscribe(() => {
+            this.isPayingOrderId.set(null);
+            this.loadOrders();
+          });
+        } else {
+          this.isPayingOrderId.set(null);
+        }
+      }
+    } catch (e: any) {
+      this.isPayingOrderId.set(null);
+      alert(e.message || 'Error opening payment gateway');
+    }
+  }
+
   openReturnModal(order: Order, item: OrderItem) {
     this.activeReturnOrder.set(order);
     this.activeReturnItem.set(item);
@@ -78,7 +169,7 @@ export class OrdersComponent implements OnInit {
     this.api.post<{ success: boolean; item: OrderItem }>(`/orders/${orderId}/items/${itemId}/return`, {
       reason: this.returnReason
     }).subscribe({
-      next: res => {
+      next: () => {
         this.returnSubmitting.set(false);
         this.closeReturnModal();
         this.loadOrders();

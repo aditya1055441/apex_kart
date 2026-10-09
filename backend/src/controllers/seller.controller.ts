@@ -65,7 +65,8 @@ export const registerStore = async (req: AuthenticatedRequest, res: Response) =>
     await db.updateUser(userId, { storeId, role: 'SELLER' });
 
     // Notify admins of new seller KYC
-    const admins = Array.from(db.users.values()).filter(u => u.role === 'ADMIN');
+    const allUsers = await db.getAllUsers();
+    const admins = allUsers.filter(u => u.role === 'ADMIN');
     for (const admin of admins) {
       await db.createNotification({
         id: `notif-${uuidv4().substring(0, 8)}`,

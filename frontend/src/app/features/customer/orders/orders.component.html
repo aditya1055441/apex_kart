@@ -48,6 +48,12 @@
                   {{ order.status }}
                 </span>
 
+                @if (order.paymentMethod === 'RAZORPAY' && order.paymentStatus === 'PENDING' && order.status !== 'CANCELLED') {
+                  <button class="btn btn-primary btn-sm" (click)="resumePaymentForOrder(order)" [disabled]="isPayingOrderId() === order.id">
+                    {{ isPayingOrderId() === order.id ? 'Connecting...' : '💳 Pay Now / Resume' }}
+                  </button>
+                }
+
                 @if (order.status === 'PLACED' || order.status === 'PROCESSING') {
                   <button class="btn btn-danger btn-sm" (click)="cancelOrder(order)">
                     Cancel Order

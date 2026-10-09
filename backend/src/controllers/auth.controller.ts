@@ -162,7 +162,7 @@ export const verifyOtpAndLogin = async (req: Request, res: Response) => {
     let user = await db.findUserByEmail(phoneOrEmail);
     if (!user) {
       // Find by phone
-      user = Array.from(db.users.values()).find(u => u.phone === phoneOrEmail);
+      user = await db.findUserByPhone(phoneOrEmail);
     }
 
     if (!user) {
@@ -273,7 +273,7 @@ export const sendRegistrationCode = async (req: Request, res: Response) => {
     // Check if account already exists
     let existingUser = await db.findUserByEmail(cleanId);
     if (!existingUser) {
-      existingUser = Array.from(db.users.values()).find(u => u.phone === cleanId);
+      existingUser = await db.findUserByPhone(cleanId);
     }
 
     if (existingUser) {
@@ -348,7 +348,7 @@ export const completeRegistration = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Please verify the code sent to your email or mobile number first' });
     }
 
-    const existing = (await db.findUserByEmail(cleanId)) || Array.from(db.users.values()).find(u => u.phone === cleanId);
+    const existing = (await db.findUserByEmail(cleanId)) || (await db.findUserByPhone(cleanId));
     if (existing) {
       return res.status(400).json({ success: false, message: 'Account already exists' });
     }
