@@ -51,7 +51,9 @@
             <div class="order-items p-6 flex flex-col gap-4">
               @for (item of order.items; track item.id) {
                 <div class="order-item-row flex gap-4 items-center">
-                  <img [src]="item.image" [alt]="item.productTitle" class="item-img" />
+                  <div class="flex-2">
+                    <img [src]="item.image" [alt]="item.productTitle" class="item-img" />
+                  </div>
                   <div class="flex-1">
                     <p>
                     <span class="text-xs font-mono">Order Id:-{{ order.orderNumber }}</span>
@@ -80,7 +82,7 @@
                   </div>
 
                   <div class="item-total-col text-right">
-                    <span class="font-bold text-base block font-display">₹{{ item.subtotal.toLocaleString() }}</span>
+
                     @if ((order.status === 'DELIVERED' || item.status === 'DELIVERED') && item.status !== 'RETURN_REQUESTED' && item.status !== 'RETURNED') {
                       <button class="btn btn-outline btn-sm mt-2" (click)="openReturnModal(order, item)">
                         🔄 Return / Refund
