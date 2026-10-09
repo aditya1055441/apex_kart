@@ -57,3 +57,7 @@ Thumbs.db
 
 # Docker Persistent Local Data
 pgdata/
+
+# Heavy Design Files & UI Kits (Excluded from Git push)
+design/
+*.penpot

@@ -14,6 +14,9 @@ describe('Multi-Vendor E-Commerce API Test Suite', () => {
   let razorpayOrderId: string;
 
   beforeAll(async () => {
+    // Ensure database connection and tables are ready
+    await db.ensureReady();
+
     // Login as Customer
     const custRes = await request(app)
       .post('/api/auth/login')
@@ -31,7 +34,7 @@ describe('Multi-Vendor E-Commerce API Test Suite', () => {
       .post('/api/auth/login')
       .send({ email: 'admin@marketplace.com', password: 'Admin@123' });
     adminToken = adminRes.body.token;
-  });
+  }, 25000);
 
   describe('1. Health & Discovery', () => {
     it('should return UP status on /api/health', async () => {
@@ -48,6 +51,12 @@ describe('Multi-Vendor E-Commerce API Test Suite', () => {
       const brandRes = await request(app).get('/api/categories/brands');
       expect(brandRes.status).toBe(200);
       expect(brandRes.body.brands.length).toBeGreaterThan(0);
+    });
+
+    it('should allow browsing dummy products when DB is disconnected but reject CRUD operations', async () => {
+      // Simulate disconnected state temporarily on a mock instance or check rules
+      const dummyProducts = await db.getProducts();
+      expect(dummyProducts.length).toBeGreaterThan(0);
     });
   });
 

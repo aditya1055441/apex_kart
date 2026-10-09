@@ -14,3 +14,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Exclude 60MB Design Assets from Docker context & Render build
+design/
+*.penpot
