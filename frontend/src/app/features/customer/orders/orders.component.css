@@ -1,3 +1,6 @@
+/* ==============================================================================
+   Stepper Progress Tracker
+   ============================================================================== */
 .stepper-track {
   width: 100%;
 }
@@ -54,14 +57,168 @@
   font-weight: 700;
 }
 
+/* ==============================================================================
+   Table Layouts (Order Summary & Ordered Items)
+   ============================================================================== */
+.order-summary-table-wrap,
+.order-items-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.order-summary-table,
+.order-items-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.order-summary-table th,
+.order-items-table th {
+  background-color: var(--bg-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.order-summary-table td,
+.order-items-table td {
+  padding: 1rem;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+
+.order-items-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.align-top {
+  vertical-align: top;
+}
+
 .item-img {
-  width: 68px;
-  height: 68px;
+  width: 58px;
+  height: 58px;
   border-radius: var(--radius-md);
   object-fit: cover;
   background: #f1f5f9;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+
+.order-id-badge {
+  color: var(--primary);
+}
+
+.address-box {
+  max-width: 320px;
+  line-height: 1.4;
+}
+
+.recipient-name {
+  color: var(--text-main);
+}
+
+.vendor-chip {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid rgba(79, 70, 229, 0.15);
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.order-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.pay-btn {
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
+.cancel-btn {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  transition: var(--transition);
+}
+
+.cancel-btn:hover {
+  background-color: #fecaca;
+  color: #b91c1c;
+}
+
+.return-btn {
+  white-space: nowrap;
 }
 
 .border-b { border-bottom: 1px solid var(--border); }
+.border-t { border-top: 1px solid var(--border); }
 .max-w-lg { max-width: 32rem; }
 .mx-auto { margin-left: auto; margin-right: auto; }
+
+/* ==============================================================================
+   Mobile Responsiveness (<= 640px)
+   ============================================================================== */
+@media (max-width: 640px) {
+  .orders-header {
+    margin-bottom: 1rem;
+  }
+
+  .order-card {
+    border-radius: var(--radius-md);
+  }
+
+  .tracking-stepper {
+    padding: 0.85rem 0.5rem !important;
+  }
+
+  .step-dot {
+    width: 26px;
+    height: 26px;
+    font-size: 0.7rem;
+    border-width: 2px;
+  }
+
+  .step-text {
+    font-size: 0.65rem;
+  }
+
+  .stepper-track::before {
+    top: 13px;
+    left: 12px;
+    right: 12px;
+  }
+
+  .order-summary-table th,
+  .order-items-table th {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.7rem;
+  }
+
+  .order-summary-table td,
+  .order-items-table td {
+    padding: 0.75rem;
+  }
+
+  .pay-btn, .cancel-btn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .item-img {
+    width: 48px;
+    height: 48px;
+  }
+}
