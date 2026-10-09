@@ -53,9 +53,6 @@
                 <thead>
                   <tr>
                     <th style="min-width: 250px;">Product Item</th>
-                    <th style="min-width: 120px;">Price & Qty</th>
-                    <th style="min-width: 110px;">Subtotal</th>
-                    <th style="min-width: 180px;">Shipment & Return</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -64,47 +61,82 @@
                       <td>
                         <div class="product-item-cell flex items-center gap-3">
                           <img [src]="item.image" [alt]="item.productTitle" class="item-img" />
-                          <div>
-                            <h4 class="font-bold text-sm item-title">{{ item.productTitle }}</h4>
-                            @if (item.sku) {
-                              <span class="text-xs text-muted font-mono block">SKU: {{ item.sku }}</span>
-                            }
-                            <h4 class="font-bold text-sm item-title">vendor:
+                          <div class="font-bold text-sm item-title">
+                            <h4>
+                              <span>Order Id: {{ order.orderNumber }}</span>
+                            </h4>
+                            <h4>
+                              <span>Placed on: {{ order.createdAt | date:'mediumDate' }}</span>
+                            </h4>
+                            <h4>
+                              <span>Item: {{ item.productTitle }}</span>
+                            </h4>
+                            <h4 class="font-bold text-sm item-title">Vendor:
                               <span>
                                 🏬 {{ item.storeName }}
                               </span>
                             </h4>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div class="price-qty-cell">
-                          <span class="text-sm font-semibold">₹{{ item.price.toLocaleString() }}</span>
-                          <span class="text-xs text-muted block">Qty: {{ item.quantity }}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span class="font-bold font-display text-sm text-main">₹{{ item.subtotal.toLocaleString() }}</span>
-                      </td>
-                      <td>
-                        <div class="shipment-action-cell">
-                          @if (item.trackingNumber) {
-                            <div class="tracking-pill text-xs text-primary mb-1">
-                              🚚 {{ item.courierName || 'Courier' }}: <strong>{{ item.trackingNumber }}</strong>
+                            <h4 class="font-bold text-sm item-title">Price :
+                                <span>₹{{ item.price.toLocaleString() }}</span>
+                            </h4>
+                            <h4>
+                              <span>Qty: {{ item.quantity }}</span>
+                            </h4>
+                            <h4>Subtotal :
+                              <span>₹{{ item.subtotal.toLocaleString() }}</span>
+                            </h4>
+                            <h4>
+                              <span>Total amount(inc tax) = ₹{{ order.totalAmount.toLocaleString() }}</span>
+                            </h4>
+                            <h4>
+                              <div class="shipment-action-cell">
+                                @if (item.trackingNumber) {
+                                  <div class="tracking-pill text-xs text-primary mb-1">
+                                    🚚 {{ item.courierName || 'Courier' }}: <strong>{{ item.trackingNumber }}</strong>
+                                  </div>
+                                } @else {
+                                  <span class="text-xs text-muted block mb-1">Preparing dispatch</span>
+                                }
+
+                                @if (item.status === 'RETURN_REQUESTED') {
+                                  <span class="badge badge-warning text-xs">Return Requested</span>
+                                }
+
+                                @if ((order.status === 'DELIVERED' || item.status === 'DELIVERED') && item.status !== 'RETURN_REQUESTED' && item.status !== 'RETURNED') {
+                                  <button class="btn btn-outline btn-sm return-btn" (click)="openReturnModal(order, item)">
+                                    🔄 Return / Refund
+                                  </button>
+                                }
+                              </div>
+                            </h4>
+                            <h4>
+                              <span>Payment: {{ order.paymentStatus }}</span>
+                            </h4>
+                            <div class="flex flex-col gap-2">
+                              <span class="badge"
+                                [class.badge-primary]="order.status === 'PLACED'"
+                                [class.badge-warning]="order.status === 'PROCESSING'"
+                                [class.badge-info]="order.status === 'SHIPPED'"
+                                [class.badge-success]="order.status === 'DELIVERED'"
+                                [class.badge-danger]="order.status === 'CANCELLED'">
+                                  {{ order.status }}
+                              </span>
+
+                              @if (order.status === 'PLACED' || order.status === 'PROCESSING') {
+                                <div class="order-action-buttons flex flex-wrap gap-2 mt-1">
+                                  @if (order.paymentMethod === 'RAZORPAY' && order.paymentStatus === 'PENDING') {
+                                    <button class="btn btn-primary btn-sm pay-btn flex-1" (click)="resumePaymentForOrder(order)" [disabled]="isPayingOrderId() === order.id">
+                                      {{ isPayingOrderId() === order.id ? 'Connecting...' : '💳 Pay Now' }}
+                                    </button>
+                                  }
+
+                                  <button class="btn btn-danger btn-sm cancel-btn flex-1" (click)="cancelOrder(order)">
+                                    ✖ Cancel Order
+                                  </button>
+                                </div>
+                              }
                             </div>
-                          } @else {
-                            <span class="text-xs text-muted block mb-1">Preparing dispatch</span>
-                          }
-
-                          @if (item.status === 'RETURN_REQUESTED') {
-                            <span class="badge badge-warning text-xs">Return Requested</span>
-                          }
-
-                          @if ((order.status === 'DELIVERED' || item.status === 'DELIVERED') && item.status !== 'RETURN_REQUESTED' && item.status !== 'RETURNED') {
-                            <button class="btn btn-outline btn-sm return-btn" (click)="openReturnModal(order, item)">
-                              🔄 Return / Refund
-                            </button>
-                          }
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -113,66 +145,6 @@
               </table>
             </div>
             <div class="table-responsive order-summary-table-wrap">
-              <table class="table order-summary-table">
-                <thead>
-                <tr>
-                  <th style="min-width: 170px;">Order ID & Date</th>
-                  <th style="min-width: 160px;">Payment & Total</th>
-                  <th style="min-width: 180px;">Status & Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                  <!-- Order ID Cell -->
-                  <td class="align-top">
-                    <p>
-                      <span class="text-xs text-muted block">Order Id:-<strong>{{ order.orderNumber }}</strong></span>
-                    </p>
-                    <p>
-                      <span class="text-xs text-muted block">Placed:- <strong>{{ order.createdAt | date:'mediumDate' }}</strong></span>
-                    </p>
-                    <span class="text-xs text-muted block">Items-: <strong>{{ order.items.length }} product(s)</strong></span>
-                  </td>
-
-                  <!-- Payment & Total Cell -->
-                  <td class="align-top payment-cell">
-                    <p>
-                      <span class="text-xs text-muted block">Total amount(inc tax) = <strong>₹{{ order.totalAmount.toLocaleString() }}</strong></span>
-                    </p>
-                    <span class="badge badge-neutral text-xs mt-1">{{ order.paymentMethod }}</span>
-                    <span class="text-xs text-muted block mt-1">Payment: <strong>{{ order.paymentStatus }}</strong></span>
-                  </td>
-
-                  <!-- Status & Actions Cell -->
-                  <td class="align-top actions-cell">
-                    <div class="flex flex-col gap-2">
-                        <span class="badge"
-                              [class.badge-primary]="order.status === 'PLACED'"
-                              [class.badge-warning]="order.status === 'PROCESSING'"
-                              [class.badge-info]="order.status === 'SHIPPED'"
-                              [class.badge-success]="order.status === 'DELIVERED'"
-                              [class.badge-danger]="order.status === 'CANCELLED'">
-                          {{ order.status }}
-                        </span>
-
-                      @if (order.status === 'PLACED' || order.status === 'PROCESSING') {
-                        <div class="order-action-buttons flex flex-wrap gap-2 mt-1">
-                          @if (order.paymentMethod === 'RAZORPAY' && order.paymentStatus === 'PENDING') {
-                            <button class="btn btn-primary btn-sm pay-btn flex-1" (click)="resumePaymentForOrder(order)" [disabled]="isPayingOrderId() === order.id">
-                              {{ isPayingOrderId() === order.id ? 'Connecting...' : '💳 Pay Now' }}
-                            </button>
-                          }
-
-                          <button class="btn btn-danger btn-sm cancel-btn flex-1" (click)="cancelOrder(order)">
-                            ✖ Cancel Order
-                          </button>
-                        </div>
-                      }
-                    </div>
-                  </td>
-                </tr>
-                </tbody>
-              </table>
               <table class="table order-summary-table">
                 <thead>
                 <tr>
