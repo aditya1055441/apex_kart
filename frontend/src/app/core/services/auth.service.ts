@@ -81,6 +81,16 @@ export class AuthService {
     );
   }
 
+  public googleLogin(data: { idToken: string; email?: string; name?: string }): Observable<any> {
+    return this.api.post<{ success: boolean; token: string; user: User }>('/auth/google-login', data).pipe(
+      tap(res => {
+        if (res.success) {
+          this.setSession(res.token, res.user);
+        }
+      })
+    );
+  }
+
   public register(data: any): Observable<any> {
     return this.api.post<{ success: boolean; token: string; user: User }>('/auth/register', data).pipe(
       tap(res => {

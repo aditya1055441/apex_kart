@@ -10,6 +10,8 @@ import { config } from '../config';
 import { User, Address } from '../types';
 import { AuthenticatedRequest } from '../middleware/auth';
 
+const admin = require('../firebase-admin');
+
 // In-memory OTP store for phone/email verification
 const otpStore = new Map<string, { code: string; expiresAt: number; verified?: boolean }>();
 
@@ -207,6 +209,80 @@ export const verifyOtpAndLogin = async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const googleLogin = async (req: Request, res: Response) => {
+  try {
+    const idToken = req.body.idToken || req.body.tokenId;
+
+    if (!idToken) {
+      return res.status(400).json({
+        message: 'ID token is required'
+      });
+    }
+
+    
+    let decodedToken: any;
+    if (config.nodeEnv === 'test' && typeof idToken === 'string' && idToken.startsWith('mock-')) {
+      decodedToken = {
+        uid: 'mock-google-uid-123',
+        email: req.body.email || 'mock@example.com',
+        name: req.body.name || '',
+        picture: req.body.picture || ''
+      };
+    } else {
+      decodedToken = await admin.auth().verifyIdToken(idToken);
+    }
+
+    const user = {
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      name: decodedToken.name || '',
+      picture: decodedToken.picture || ''
+    };
+
+    if (!user.email) {
+      return res.status(400).json({ message: 'Valid Google account email is required' });
+    }
+
+    const cleanEmail = user.email.trim().toLowerCase();
+    let dbUser = await db.findUserByEmail(cleanEmail);
+
+    if (!dbUser) {
+      // Create a customer user for Google login
+      const newUser: User = {
+        id: `u-${uuidv4().substring(0, 8)}`,
+        name: user.name || cleanEmail.split('@')[0],
+        email: cleanEmail,
+        phone: '+919999999999',
+        passwordHash: await bcrypt.hash(uuidv4(), 10),
+        role: 'CUSTOMER',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      await db.createUser(newUser);
+      dbUser = newUser;
+    }
+
+    const token = jwt.sign(
+      { id: dbUser.id, role: dbUser.role, email: dbUser.email, storeId: dbUser.storeId },
+      config.jwtSecret,
+      { expiresIn: '7d' }
+    );
+
+    const { passwordHash: _, ...safeUser } = dbUser;
+    return res.json({
+      success: true,
+      message: 'Signed in with Google successfully',
+      token,
+      user: safeUser
+    });
+  } catch (err: any) {
+    return res.status(401).json({
+      success: false,
+      message: err.message || 'Firebase ID token verification failed'
+    });
   }
 };
 

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   register,
   login,
+  googleLogin,
   sendOtp,
   verifyOtpAndLogin,
   getCurrentUser,
@@ -19,6 +20,7 @@ const router = Router();
 // Standard Auth
 router.post('/register', register);
 router.post('/login', login);
+router.post('/google-login', googleLogin);
 router.post('/send-otp', sendOtp);
 router.post('/verify-otp', verifyOtpAndLogin);
 

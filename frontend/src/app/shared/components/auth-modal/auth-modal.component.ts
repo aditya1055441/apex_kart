@@ -2,6 +2,7 @@ import { Component, inject, signal, effect, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
+import { FirebaseService } from '../../../core/services/firebase.service';
 
 @Component({
   selector: 'app-auth-modal',
@@ -12,6 +13,7 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class AuthModalComponent implements OnDestroy {
   public auth = inject(AuthService);
+  public firebaseService = inject(FirebaseService);
 
   public activeTab = signal<'login' | 'otp' | 'register'>('login');
   public loading = signal<boolean>(false);
@@ -140,6 +142,40 @@ export class AuthModalComponent implements OnDestroy {
         this.errorMessage.set(err.error?.message || 'Login failed. Please check credentials.');
       }
     });
+  }
+
+  async onGoogleSignIn() {
+    this.loading.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+
+    try {
+      const userCredential = await this.firebaseService.signInWithGoogle();
+      const idToken = await userCredential.user.getIdToken();
+
+      this.auth.googleLogin({
+        idToken,
+        email: userCredential.user.email || undefined,
+        name: userCredential.user.displayName || undefined
+      }).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.resetAllForms();
+          this.auth.closeAuthModal();
+        },
+        error: err => {
+          this.loading.set(false);
+          this.errorMessage.set(err.error?.message || 'Failed to authenticate Google user with backend');
+        }
+      });
+    } catch (err: any) {
+      this.loading.set(false);
+      if (err.code === 'auth/popup-closed-by-user') {
+        this.errorMessage.set('Google sign-in was cancelled.');
+      } else {
+        this.errorMessage.set(err.message || 'Google sign-in failed. Please try again.');
+      }
+    }
   }
 
   onSendOtp() {

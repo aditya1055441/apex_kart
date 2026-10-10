@@ -81,6 +81,24 @@ describe('Multi-Vendor E-Commerce API Test Suite', () => {
       expect(res.body.user.role).toBe('CUSTOMER');
     });
 
+    it('should authenticate user via Google sign-in and create account if not exists', async () => {
+      const googleEmail = `google_user_${Date.now()}@gmail.com`;
+      const res = await request(app)
+        .post('/api/auth/google-login')
+        .send({
+          idToken: 'mock-google-id-token',
+          email: googleEmail,
+          name: 'Google Customer',
+          photoUrl: 'https://lh3.googleusercontent.com/a/default-user'
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.token).toBeDefined();
+      expect(res.body.user.email).toBe(googleEmail);
+      expect(res.body.user.role).toBe('CUSTOMER');
+    });
+
     it('should handle multi-step registration with email, random code, fullName and dob', async () => {
       const newEmail = `user_step_${Date.now()}@testmarketplace.com`;
 
