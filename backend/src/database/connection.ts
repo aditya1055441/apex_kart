@@ -261,6 +261,19 @@ class DatabaseConnection {
             processed_at TIMESTAMP WITH TIME ZONE,
             notes TEXT
         );
+
+        CREATE TABLE IF NOT EXISTS verification_otps (
+            id VARCHAR(255) PRIMARY KEY,
+            identifier VARCHAR(255) NOT NULL,
+            otp_hash VARCHAR(255) NOT NULL,
+            expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+            attempts INT NOT NULL DEFAULT 0,
+            resend_count INT NOT NULL DEFAULT 1,
+            last_resend_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            verified BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_verification_otps_identifier ON verification_otps(identifier);
       `);
       console.log('[DB] Tables successfully verified in PostgreSQL.');
     } catch (e: any) {

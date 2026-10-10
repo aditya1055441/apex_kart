@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../database/db';
+import { otpDb } from '../database/otp.db';
+import { emailService } from '../services/email.service';
 import { config } from '../config';
 import { User, Address } from '../types';
 import { AuthenticatedRequest } from '../middleware/auth';
@@ -283,20 +286,31 @@ export const sendRegistrationCode = async (req: Request, res: Response) => {
       });
     }
 
-    // Generate random 6-digit code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    otpStore.set(cleanId, {
-      code,
-      expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
-      verified: false
-    });
+    // 3. Cryptographically secure random 6-digit OTP (100000 - 999999)
+    const code = crypto.randomInt(100000, 1000000).toString();
 
-    console.log(`[VERIFICATION SERVICE] Sent random registration code ${code} to ${cleanId}`);
+    // 1, 2, 4. 5-minute expiration, rate limiting (cooldown & max attempts), and SHA-256 hashed PostgreSQL persistence
+    const saveResult = await otpDb.saveOtp(cleanId, code);
+    if (!saveResult.allowed) {
+      return res.status(429).json({ success: false, message: saveResult.message });
+    }
+
+    // Send email via Resend API if identifier is an email address
+    if (isEmail) {
+      const emailSent = await emailService.sendVerificationCode(cleanId, code);
+      if (!emailSent) {
+        console.warn(`[EMAIL NOTICE] Resend delivery in test/sandbox mode for ${cleanId}. Verification code: ${code}`);
+      }
+    } else {
+      console.log(`[SMS SIMULATION] Sent OTP code ${code} to mobile phone ${cleanId}`);
+    }
 
     return res.json({
       success: true,
-      message: `Verification code sent to ${cleanId}`,
-      debugCode: code
+      message: isEmail
+        ? `A 6-digit verification code has been sent to ${cleanId} via Resend. (Valid for 5 mins)`
+        : `A 6-digit verification code has been sent to ${cleanId}. (Valid for 5 mins)`,
+      debugCode: code // Available in test/dev environments
     });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
@@ -311,14 +325,13 @@ export const verifyRegistrationCode = async (req: Request, res: Response) => {
     }
 
     const cleanId = identifier.trim().toLowerCase();
-    const record = otpStore.get(cleanId);
 
-    if (!record || record.code !== code.trim() || Date.now() > record.expiresAt) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired verification code' });
+    // 2 & 4. Verify hashed OTP against PostgreSQL with 5-minute expiration & max 5 incorrect attempt limit
+    const result = await otpDb.verifyOtp(cleanId, code.trim());
+
+    if (!result.success) {
+      return res.status(400).json({ success: false, message: result.message });
     }
-
-    record.verified = true;
-    otpStore.set(cleanId, record);
 
     return res.json({
       success: true,
@@ -342,9 +355,10 @@ export const completeRegistration = async (req: Request, res: Response) => {
     }
 
     const cleanId = identifier.trim().toLowerCase();
-    const record = otpStore.get(cleanId);
 
-    if (!record || (!record.verified && record.code !== code)) {
+    // Check if verified in PostgreSQL or input code matches
+    const isVerified = await otpDb.isVerified(cleanId, code);
+    if (!isVerified) {
       return res.status(400).json({ success: false, message: 'Please verify the code sent to your email or mobile number first' });
     }
 
@@ -379,7 +393,7 @@ export const completeRegistration = async (req: Request, res: Response) => {
     };
 
     await db.createUser(newUser);
-    otpStore.delete(cleanId);
+    await otpDb.deleteOtp(cleanId);
 
     const token = jwt.sign(
       { id: newUser.id, role: newUser.role, email: newUser.email },

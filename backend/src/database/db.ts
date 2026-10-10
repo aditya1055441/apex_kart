@@ -309,3 +309,4 @@ export * from './order.db';
 export * from './coupon.db';
 export * from './review.db';
 export * from './payout.db';
+export * from './otp.db';

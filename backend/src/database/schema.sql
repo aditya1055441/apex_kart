@@ -192,6 +192,19 @@ CREATE TABLE IF NOT EXISTS payouts (
     notes TEXT
 );
 
+-- Verification OTPs Table
+CREATE TABLE IF NOT EXISTS verification_otps (
+    id VARCHAR(255) PRIMARY KEY,
+    identifier VARCHAR(255) NOT NULL,
+    otp_hash VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    attempts INT NOT NULL DEFAULT 0,
+    resend_count INT NOT NULL DEFAULT 1,
+    last_resend_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    verified BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_store ON products(store_id);
@@ -199,3 +212,4 @@ CREATE INDEX IF NOT EXISTS idx_products_featured ON products(is_featured);
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_store ON order_items(store_id);
 CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_verification_otps_identifier ON verification_otps(identifier);

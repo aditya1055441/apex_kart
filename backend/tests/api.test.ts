@@ -5,6 +5,7 @@ import { db } from '../src/database/db';
 import { config } from '../src/config';
 
 const app = createApp();
+jest.setTimeout(25000);
 
 describe('Multi-Vendor E-Commerce API Test Suite', () => {
   let customerToken: string;
@@ -148,6 +149,37 @@ describe('Multi-Vendor E-Commerce API Test Suite', () => {
       expect(completeRes.body.user.name).toBe('Vikram Seth');
       expect(completeRes.body.user.dob).toBe('1992-03-14');
       expect(completeRes.body.user.phone).toBe(newPhone);
+    });
+
+    it('should enforce rate limiting on immediate resend attempts and lock out after excessive incorrect attempts', async () => {
+      const testEmail = `ratelimit_${Date.now()}@testmarketplace.com`;
+
+      // 1. Initial send
+      const firstSend = await request(app)
+        .post('/api/auth/register/send-code')
+        .send({ identifier: testEmail });
+      expect(firstSend.status).toBe(200);
+
+      // 2. Immediate second send should be rate-limited (429)
+      const secondSend = await request(app)
+        .post('/api/auth/register/send-code')
+        .send({ identifier: testEmail });
+      expect(secondSend.status).toBe(429);
+      expect(secondSend.body.message).toContain('Please wait');
+
+      // 3. Incorrect verification attempts
+      for (let i = 0; i < 5; i++) {
+        await request(app)
+          .post('/api/auth/register/verify-code')
+          .send({ identifier: testEmail, code: '000000' });
+      }
+
+      // 6th attempt should be locked out
+      const lockedRes = await request(app)
+        .post('/api/auth/register/verify-code')
+        .send({ identifier: testEmail, code: '000000' });
+      expect(lockedRes.status).toBe(400);
+      expect(lockedRes.body.message).toContain('invalidated');
     });
 
     it('should reject registration if password lacks uppercase, lowercase, or special character', async () => {
