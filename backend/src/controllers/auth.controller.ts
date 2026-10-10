@@ -310,7 +310,7 @@ export const sendRegistrationCode = async (req: Request, res: Response) => {
       message: isEmail
         ? `A 6-digit verification code has been sent to ${cleanId} via Resend. (Valid for 5 mins)`
         : `A 6-digit verification code has been sent to ${cleanId}. (Valid for 5 mins)`,
-      debugCode: code // Available in test/dev environments
+      debugCode: config.nodeEnv === 'test' ? code : undefined
     });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });

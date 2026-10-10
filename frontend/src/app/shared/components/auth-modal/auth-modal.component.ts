@@ -34,7 +34,6 @@ export class AuthModalComponent {
   public regCode = '';
   public regCodeSent = signal<boolean>(false);
   public regCodeVerified = signal<boolean>(false);
-  public debugRegCode = signal<string>('');
   public regFullName = '';
   public regDob = '';
   public regPassword = '';
@@ -52,7 +51,6 @@ export class AuthModalComponent {
     this.regFullName = '';
     this.regDob = '';
     this.regPassword = '';
-    this.debugRegCode.set('');
     this.errorMessage.set('');
     this.successMessage.set('');
   }
@@ -134,11 +132,8 @@ export class AuthModalComponent {
       next: res => {
         this.loading.set(false);
         this.regCodeSent.set(true);
+        this.regCode = '';
         this.successMessage.set(res.message);
-        if (res.debugCode) {
-          this.debugRegCode.set(res.debugCode);
-          this.regCode = res.debugCode; // auto-populate for seamless testing
-        }
       },
       error: err => {
         this.loading.set(false);
