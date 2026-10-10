@@ -37,7 +37,7 @@ class GmailSmtpService {
    * @param userSuppliedEmail - The exact email entered by the user in the registration form.
    * @param code - Cryptographically secure 6-digit OTP code.
    */
-  public async sendVerificationCode(userSuppliedEmail: string, code: string): Promise<boolean> {
+  public async sendVerificationCode(userSuppliedEmail: string, code: string): Promise<{ success: boolean; error?: string }> {
     try {
       if (!this.transporter) {
         this.initTransporter();
@@ -45,7 +45,7 @@ class GmailSmtpService {
 
       if (!this.transporter) {
         console.warn('[GMAIL SMTP WARNING] Transporter not ready. Cannot send email.');
-        return false;
+        return { success: false, error: 'Gmail SMTP credentials missing or transporter not ready' };
       }
 
       const fromAddress = process.env.GMAIL_USER || config.gmail.user || 'aditya.atos@gmail.com';
@@ -84,10 +84,10 @@ class GmailSmtpService {
       });
 
       console.log(`[GMAIL SMTP SUCCESS] Successfully delivered email to ${toEmail}. MessageId: ${info.messageId}`);
-      return true;
+      return { success: true };
     } catch (err: any) {
       console.error('[GMAIL SMTP ERROR] Error dispatching email via Gmail SMTP:', err.message);
-      return false;
+      return { success: false, error: `Gmail SMTP failed: ${err.message}` };
     }
   }
 }

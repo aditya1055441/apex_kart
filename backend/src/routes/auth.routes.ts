@@ -8,6 +8,7 @@ import {
   getUserAddresses,
   addAddress,
   sendRegistrationCode,
+  getRegistrationCodeStatus,
   verifyRegistrationCode,
   completeRegistration
 } from '../controllers/auth.controller';
@@ -23,6 +24,7 @@ router.post('/verify-otp', verifyOtpAndLogin);
 
 // Multi-step verified registration (Email/Phone -> Random code -> Name & DOB -> Register)
 router.post('/register/send-code', sendRegistrationCode);
+router.get('/register/code-status', getRegistrationCodeStatus);
 router.post('/register/verify-code', verifyRegistrationCode);
 router.post('/register/complete', completeRegistration);
 

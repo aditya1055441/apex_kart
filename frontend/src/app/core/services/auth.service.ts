@@ -14,6 +14,8 @@ export class AuthService {
   public currentUser = signal<User | null>(null);
   public currentStore = signal<Store | null>(null);
   public isAuthModalOpen = signal<boolean>(false);
+  public initialAuthTab = signal<'login' | 'otp' | 'register'>('login');
+  public authModalOpenCount = signal<number>(0);
 
   public isAuthenticated = computed(() => !!this.currentUser());
   public isSeller = computed(() => this.currentUser()?.role === 'SELLER');
@@ -91,6 +93,10 @@ export class AuthService {
 
   public sendRegistrationCode(identifier: string): Observable<any> {
     return this.api.post('/auth/register/send-code', { identifier });
+  }
+
+  public getRegistrationCodeStatus(identifier: string): Observable<any> {
+    return this.api.get('/auth/register/code-status', { identifier });
   }
 
   public verifyRegistrationCode(identifier: string, code: string): Observable<any> {
@@ -175,7 +181,9 @@ export class AuthService {
     this.router.navigate(['/']);
   }
 
-  public openAuthModal() {
+  public openAuthModal(tab: 'login' | 'otp' | 'register' = 'login') {
+    this.initialAuthTab.set(tab);
+    this.authModalOpenCount.update(c => c + 1);
     this.isAuthModalOpen.set(true);
   }
 

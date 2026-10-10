@@ -17,7 +17,7 @@ import { Address } from '../../../core/models';
 
         <div class="grid grid-cols-3 gap-8">
           <!-- Left: User Info Card -->
-          <div class="profile-card card p-6">
+          <div class="profile-card card">
             <div class="avatar-large mx-auto mb-3">
               {{ auth.currentUser()?.name?.charAt(0) || 'U' }}
             </div>
@@ -140,6 +140,19 @@ import { Address } from '../../../core/models';
     </div>
   `,
   styles: [`
+    .profile-card {
+      padding: 0.5rem;
+      height: fit-content;
+      box-sizing: border-box;
+    }
+    .profile-card .user-details > div {
+      padding: 0.2rem;
+      border-radius: 6px;
+      transition: var(--transition);
+    }
+    .profile-card .user-details > div:hover {
+      background-color: var(--bg-muted);
+    }
     .avatar-large {
       width: 72px;
       height: 72px;

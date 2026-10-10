@@ -19,22 +19,27 @@ class EmailService {
    * @param userSuppliedEmail - The exact email entered by the user in the registration form.
    * @param code - Cryptographically secure 6-digit OTP code.
    */
-  public async sendVerificationCode(userSuppliedEmail: string, code: string): Promise<boolean> {
+  public async sendVerificationCode(userSuppliedEmail: string, code: string): Promise<{ success: boolean; error?: string }> {
     const preferredService = process.env.EMAIL_SERVICE || config.emailService || 'GmailSMTP';
+    let lastError = '';
 
     // 1. If configured as GmailSMTP (default), use Nodemailer Gmail SMTP service
     if (preferredService === 'GmailSMTP') {
       console.log(`[EMAIL ROUTER] Routing verification email for ${userSuppliedEmail} through Gmail SMTP...`);
       const sent = await gmailService.sendVerificationCode(userSuppliedEmail, code);
-      if (sent) return true;
-      console.warn('[EMAIL ROUTER WARNING] Gmail SMTP failed or returned false. Attempting Resend API fallback...');
+      if (sent.success) return { success: true };
+      lastError = sent.error || 'Gmail SMTP connection timed out or failed.';
+      console.warn('[EMAIL ROUTER WARNING] Gmail SMTP failed. Attempting Resend API fallback...');
     }
 
     // 2. Resend API
     try {
       if (!this.resend) {
-        console.warn('[EMAIL WARNING] Resend API key not configured. Mocking email delivery.');
-        return false;
+        console.warn('[EMAIL WARNING] Resend API key not configured.');
+        return {
+          success: false,
+          error: lastError || 'Email delivery service not configured. Please click Re-send Code.'
+        };
       }
 
       const fromEmail = process.env.EMAIL_FROM || config.resend.fromEmail || 'onboarding@resend.dev';
@@ -74,14 +79,21 @@ class EmailService {
 
       if (response.error) {
         console.error('[RESEND ERROR] Failed to send email via Resend:', response.error);
-        return false;
+        const errMsg = response.error.message || 'Resend delivery restricted or invalid';
+        return {
+          success: false,
+          error: `Email delivery failed (${errMsg}). Please check your address or click Re-send Code.`
+        };
       }
 
       console.log(`[RESEND SUCCESS] Successfully delivered verification email to user-supplied email: ${toEmail}. ID: ${response.data?.id}`);
-      return true;
+      return { success: true };
     } catch (err: any) {
       console.error('[RESEND EXCEPTION] Error invoking Resend email service:', err.message);
-      return false;
+      return {
+        success: false,
+        error: `Email delivery failed (${err.message || 'connection timeout'}). Please click Re-send Code.`
+      };
     }
   }
 }

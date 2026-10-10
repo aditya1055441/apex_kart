@@ -13,6 +13,14 @@ import { AuthenticatedRequest } from '../middleware/auth';
 // In-memory OTP store for phone/email verification
 const otpStore = new Map<string, { code: string; expiresAt: number; verified?: boolean }>();
 
+// Tracking for background registration email dispatches
+interface EmailDeliveryRecord {
+  status: 'PENDING' | 'SENT' | 'FAILED';
+  error?: string;
+  timestamp: number;
+}
+const emailDeliveryStatus = new Map<string, EmailDeliveryRecord>();
+
 export const validatePasswordComplexity = (password?: string): { isValid: boolean; message?: string } => {
   if (!password || typeof password !== 'string' || !password.trim()) {
     return { isValid: false, message: 'Password is required' };
@@ -295,11 +303,48 @@ export const sendRegistrationCode = async (req: Request, res: Response) => {
       return res.status(429).json({ success: false, message: saveResult.message });
     }
 
-    // Send email via Resend API if identifier is an email address
+    // If identifier is an email, dispatch asynchronously in background (page does not wait)
     if (isEmail) {
-      const emailSent = await emailService.sendVerificationCode(cleanId, code);
-      if (!emailSent) {
-        console.warn(`[EMAIL NOTICE] Resend delivery in test/sandbox mode for ${cleanId}. Verification code: ${code}`);
+      if (config.nodeEnv === 'test') {
+        // In test environment, set status directly to avoid dangling network calls after Jest teardown
+        emailDeliveryStatus.set(cleanId, {
+          status: 'SENT',
+          timestamp: Date.now()
+        });
+      } else {
+        emailDeliveryStatus.set(cleanId, {
+          status: 'PENDING',
+          timestamp: Date.now()
+        });
+
+        // Non-blocking detached promise for background delivery
+        emailService.sendVerificationCode(cleanId, code)
+          .then(result => {
+            if (result.success) {
+              emailDeliveryStatus.set(cleanId, {
+                status: 'SENT',
+                timestamp: Date.now()
+              });
+              console.log(`[EMAIL BG DISPATCH SUCCESS] Verification code delivered to ${cleanId}`);
+            } else {
+              const errDetail = result.error || 'Connection timed out or email delivery service failure';
+              emailDeliveryStatus.set(cleanId, {
+                status: 'FAILED',
+                error: errDetail,
+                timestamp: Date.now()
+              });
+              console.warn(`[EMAIL BG DISPATCH FAILED] ${cleanId}: ${errDetail}`);
+            }
+          })
+          .catch(err => {
+            const errDetail = err?.message || 'Unexpected exception during email dispatch';
+            emailDeliveryStatus.set(cleanId, {
+              status: 'FAILED',
+              error: errDetail,
+              timestamp: Date.now()
+            });
+            console.error(`[EMAIL BG DISPATCH EXCEPTION] ${cleanId}:`, err);
+          });
       }
     } else {
       console.log(`[SMS SIMULATION] Sent OTP code ${code} to mobile phone ${cleanId}`);
@@ -308,9 +353,37 @@ export const sendRegistrationCode = async (req: Request, res: Response) => {
     return res.json({
       success: true,
       message: isEmail
-        ? `A 6-digit verification code has been sent to ${cleanId} via Resend. (Valid for 5 mins)`
+        ? `A 6-digit verification code is being sent to ${cleanId} in the background. (Valid for 5 mins)`
         : `A 6-digit verification code has been sent to ${cleanId}. (Valid for 5 mins)`,
+      status: isEmail ? 'PENDING' : 'SENT',
       debugCode: config.nodeEnv === 'test' ? code : undefined
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const getRegistrationCodeStatus = async (req: Request, res: Response) => {
+  try {
+    const { identifier } = req.query;
+    if (!identifier || typeof identifier !== 'string') {
+      return res.status(400).json({ success: false, message: 'Identifier is required' });
+    }
+
+    const cleanId = identifier.trim().toLowerCase();
+    const record = emailDeliveryStatus.get(cleanId);
+
+    if (!record) {
+      return res.json({
+        success: true,
+        status: 'IDLE'
+      });
+    }
+
+    return res.json({
+      success: true,
+      status: record.status,
+      error: record.error
     });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });

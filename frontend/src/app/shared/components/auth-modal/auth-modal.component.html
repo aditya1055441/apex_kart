@@ -1,5 +1,5 @@
 @if (auth.isAuthModalOpen()) {
-  <div class="modal-backdrop" (click)="auth.closeAuthModal()">
+  <div class="modal-backdrop" (click)="onCloseModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3 class="font-bold text-lg">
@@ -7,18 +7,18 @@
           @else if (activeTab() === 'otp') { Quick Login with OTP }
           @else { Create New Account }
         </h3>
-        <button class="close-btn" (click)="auth.closeAuthModal()">✕</button>
+        <button class="close-btn" (click)="onCloseModal()">✕</button>
       </div>
 
       <!-- Auth Tabs -->
       <div class="auth-tabs flex border-b">
-        <button class="tab-btn flex-1 py-3" [class.active]="activeTab() === 'login'" (click)="activeTab.set('login')">
+        <button class="tab-btn flex-1 py-3" [class.active]="activeTab() === 'login'" (click)="switchTab('login')">
           Password Login
         </button>
-        <button class="tab-btn flex-1 py-3" [class.active]="activeTab() === 'otp'" (click)="activeTab.set('otp')">
+        <button class="tab-btn flex-1 py-3" [class.active]="activeTab() === 'otp'" (click)="switchTab('otp')">
           OTP Login
         </button>
-        <button class="tab-btn flex-1 py-3" [class.active]="activeTab() === 'register'" (click)="activeTab.set('register')">
+        <button class="tab-btn flex-1 py-3" [class.active]="activeTab() === 'register'" (click)="switchTab('register')">
           Register
         </button>
       </div>
@@ -51,6 +51,10 @@
               {{ loading() ? 'Signing in...' : 'Sign In' }}
             </button>
           </form>
+
+          <p class="text-xs text-center text-muted mt-3">
+            Don't have an account? <button type="button" class="text-primary font-bold hover:underline" (click)="switchTab('register')">Create New Account</button>
+          </p>
 
           <!-- Quick Demo Fill -->
           <div class="demo-fill-box mt-4 p-3 bg-slate-50 border rounded text-xs">
@@ -89,6 +93,10 @@
               </button>
             }
           </form>
+
+          <p class="text-xs text-center text-muted mt-3">
+            Don't have an account? <button type="button" class="text-primary font-bold hover:underline" (click)="switchTab('register')">Create New Account</button>
+          </p>
         }
 
         <!-- REGISTER TAB (Multi-Step: Email/Mobile -> Code -> Name & DOB -> OK / Register) -->
@@ -138,6 +146,20 @@
                     {{ regCodeSent() ? 'Code Sent ✓' : 'Send Code' }}
                   </button>
                 </div>
+
+                <!-- Re-send option below Send Code button -->
+                @if (regCodeSent()) {
+                  <div class="flex items-center justify-between mt-2 pt-1.5 border-t border-slate-100 text-xs">
+                    <span class="text-muted">Didn't receive code?</span>
+                    <button
+                      type="button"
+                      class="text-primary font-semibold hover:underline bg-transparent border-0 p-0 cursor-pointer disabled:opacity-50 inline-flex items-center gap-1"
+                      (click)="onResendCode()"
+                      [disabled]="resendCooldown() > 0 || loading()">
+                      ↻ {{ resendCooldown() > 0 ? 'Re-send in ' + resendCooldown() + 's' : 'Re-send Code' }}
+                    </button>
+                  </div>
+                }
               </div>
 
               <!-- Step 2: Enter Verification Code -->
@@ -164,6 +186,15 @@
                     [disabled]="loading() || regCode.length < 4">
                     {{ loading() ? 'Verifying...' : 'Verify Code & Proceed' }}
                   </button>
+                  <div class="text-center mt-2.5">
+                    <button
+                      type="button"
+                      class="text-xs text-primary font-semibold hover:underline bg-transparent border-0 cursor-pointer disabled:opacity-50"
+                      (click)="onResendCode()"
+                      [disabled]="resendCooldown() > 0 || loading()">
+                      {{ resendCooldown() > 0 ? 'Re-send code in ' + resendCooldown() + 's' : 'Didn\'t get a code? Re-send Code' }}
+                    </button>
+                  </div>
                 </div>
               }
             }
@@ -257,6 +288,10 @@
                 </button>
               </form>
             }
+
+            <p class="text-xs text-center text-muted mt-2">
+              Already have an account? <button type="button" class="text-primary font-bold hover:underline" (click)="switchTab('login')">Sign In</button>
+            </p>
           </div>
         }
       </div>

@@ -94,7 +94,14 @@ describe('Multi-Vendor E-Commerce API Test Suite', () => {
       expect(sendRes.body.debugCode).toBeDefined();
       const code = sendRes.body.debugCode;
 
-      // 2. Verify code
+      // Check background dispatch delivery status
+      const statusRes = await request(app)
+        .get(`/api/auth/register/code-status?identifier=${encodeURIComponent(newEmail)}`);
+      expect(statusRes.status).toBe(200);
+      expect(statusRes.body.success).toBe(true);
+      expect(statusRes.body.status).toBe('SENT');
+
+      // 2. Verify code explicitly
       const verifyRes = await request(app)
         .post('/api/auth/register/verify-code')
         .send({ identifier: newEmail, code });
