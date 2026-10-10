@@ -10,15 +10,13 @@ class GmailSmtpService {
 
   private initTransporter(): void {
     const user = process.env.GMAIL_USER || config.gmail.user;
-    const rawPass = process.env.GMAIL_APP_PASSWORD || config.gmail.appPassword;
-    // Strip any spaces from Google App Password format (e.g. "abcd efgh ijkl mnop" -> "abcdefghijklmnop")
-    const pass = rawPass ? rawPass.replace(/\s+/g, '') : '';
+    const pass = process.env.GMAIL_APP_PASSWORD || config.gmail.appPassword;
 
     if (user && pass) {
       this.transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
-        port: 587,
-        secure: false, // Use STARTTLS on port 587
+        port: 465,
+        secure: true, // Use STARTTLS on port 587
         auth: {
           user,
           pass
