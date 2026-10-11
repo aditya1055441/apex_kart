@@ -205,6 +205,44 @@ CREATE TABLE IF NOT EXISTS verification_otps (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Shipment Tracking Table (1 row per order)
+CREATE TABLE IF NOT EXISTS shipment_tracking (
+    id BIGSERIAL PRIMARY KEY,
+    order_id VARCHAR(255) NOT NULL UNIQUE
+        REFERENCES orders(id) ON DELETE CASCADE,
+    tracking_number VARCHAR(50) NOT NULL UNIQUE,
+    current_status VARCHAR(30) NOT NULL
+        DEFAULT 'ORDER_PLACED',
+    estimated_delivery DATE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT valid_current_status CHECK (
+        current_status IN (
+            'ORDER_PLACED',
+            'PACKED',
+            'SHIPPED',
+            'IN_TRANSIT',
+            'OUT_FOR_DELIVERY',
+            'DELIVERED',
+            'CANCELLED',
+            'DELIVERY_FAILED'
+        )
+    )
+);
+
+-- Tracking Events Table (History of status changes)
+CREATE TABLE IF NOT EXISTS tracking_events (
+    id BIGSERIAL PRIMARY KEY,
+    shipment_id BIGINT NOT NULL
+        REFERENCES shipment_tracking(id) ON DELETE CASCADE,
+    status VARCHAR(30) NOT NULL,
+    location VARCHAR(200),
+    description TEXT NOT NULL,
+    event_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_store ON products(store_id);
@@ -213,3 +251,6 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_store ON order_items(store_id);
 CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id);
 CREATE INDEX IF NOT EXISTS idx_verification_otps_identifier ON verification_otps(identifier);
+CREATE INDEX IF NOT EXISTS idx_shipment_tracking_number ON shipment_tracking(tracking_number);
+CREATE INDEX IF NOT EXISTS idx_shipment_tracking_order ON shipment_tracking(order_id);
+CREATE INDEX IF NOT EXISTS idx_tracking_events_shipment_time ON tracking_events(shipment_id, event_time, id);

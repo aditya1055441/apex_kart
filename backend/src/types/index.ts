@@ -246,3 +246,35 @@ export interface Notification {
   isRead: boolean;
   createdAt: string;
 }
+
+export type ShipmentStatus =
+  | 'ORDER_PLACED'
+  | 'PACKED'
+  | 'SHIPPED'
+  | 'IN_TRANSIT'
+  | 'OUT_FOR_DELIVERY'
+  | 'DELIVERED'
+  | 'CANCELLED'
+  | 'DELIVERY_FAILED';
+
+export interface TrackingEvent {
+  id: string | number;
+  shipmentId: string | number;
+  status: ShipmentStatus;
+  location?: string;
+  description: string;
+  eventTime: string;
+  createdAt: string;
+}
+
+export interface ShipmentTracking {
+  id: string | number;
+  orderId: string;
+  trackingNumber: string;
+  currentStatus: ShipmentStatus;
+  estimatedDelivery?: string;
+  createdAt: string;
+  updatedAt: string;
+  events?: TrackingEvent[];
+  order?: Order;
+}

@@ -1,6 +1,8 @@
 import { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../database/db';
+import { trackingDb } from '../database/tracking.db';
+import { trackingService } from '../services/tracking.service';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { Store, Payout } from '../types';
 
@@ -212,6 +214,63 @@ export const updateFulfillmentStatus = async (req: AuthenticatedRequest, res: Re
       trackingNumber,
       courierName
     });
+
+    // Synchronize with shipment tracking lifecycle
+    try {
+      const shipment = await trackingDb.getShipmentByOrderId(orderId);
+      if (shipment) {
+        if (status === 'PROCESSING' && shipment.currentStatus === 'ORDER_PLACED') {
+          await trackingService.transitionShipmentStatus(
+            shipment.trackingNumber,
+            'PACKED',
+            'Seller Fulfillment Center',
+            'Warehouse has packed the product.'
+          );
+        } else if (status === 'SHIPPED') {
+          if (shipment.currentStatus === 'ORDER_PLACED') {
+            await trackingService.transitionShipmentStatus(
+              shipment.trackingNumber,
+              'PACKED',
+              'Seller Fulfillment Center',
+              'Warehouse has packed the product.'
+            );
+          }
+          if (shipment.currentStatus === 'PACKED' || shipment.currentStatus === 'ORDER_PLACED') {
+            await trackingService.transitionShipmentStatus(
+              shipment.trackingNumber,
+              'SHIPPED',
+              courierName ? `${courierName} Outbound Hub` : 'Outbound Logistics Hub',
+              'Parcel has left the warehouse.'
+            );
+          }
+        } else if (status === 'DELIVERED') {
+          if (shipment.currentStatus === 'SHIPPED') {
+            await trackingService.transitionShipmentStatus(
+              shipment.trackingNumber,
+              'IN_TRANSIT',
+              'Regional Sorting Hub',
+              'Parcel is moving between logistics facilities.'
+            );
+            await trackingService.transitionShipmentStatus(
+              shipment.trackingNumber,
+              'OUT_FOR_DELIVERY',
+              'Local Delivery Facility',
+              'Courier is delivering the parcel.'
+            );
+          }
+          if (shipment.currentStatus === 'OUT_FOR_DELIVERY') {
+            await trackingService.transitionShipmentStatus(
+              shipment.trackingNumber,
+              'DELIVERED',
+              'Customer Destination Address',
+              "Customer's parcel has been delivered."
+            );
+          }
+        }
+      }
+    } catch (e: any) {
+      console.warn('[TRACKING SYNC WARNING] Could not sync seller status:', e.message);
+    }
 
     // Notify customer
     await db.createNotification({

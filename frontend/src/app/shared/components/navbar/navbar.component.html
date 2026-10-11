@@ -6,7 +6,8 @@
     </div>
     <div class="top-nav-links flex items-center gap-4 text-xs desktop-only">
       <a routerLink="/seller/register" class="top-link">Become a Seller</a>
-      <a routerLink="/orders" class="top-link">Track Orders</a>
+      <a routerLink="/tracking" class="top-link font-semibold text-primary">📦 Track Shipment</a>
+      <a routerLink="/orders" class="top-link">My Orders</a>
       @if (auth.isAuthenticated()) {
         <span class="user-chip">Logged in as <strong>{{ auth.currentUser()?.name }}</strong></span>
         <button (click)="auth.logout()" class="top-link text-danger">Sign Out</button>
@@ -88,7 +89,8 @@
                 <strong>{{ auth.currentUser()?.name }}</strong>
                 <span class="dropdown-email">{{ auth.currentUser()?.email }}</span>
               </div>
-              <a routerLink="/orders" (click)="closeDropdown()" class="dropdown-item">📦 My Orders & Tracking</a>
+              <a routerLink="/orders" (click)="closeDropdown()" class="dropdown-item">📦 My Orders</a>
+              <a routerLink="/tracking" (click)="closeDropdown()" class="dropdown-item text-primary font-semibold">🚚 Track Shipment</a>
               <a routerLink="/profile" (click)="closeDropdown()" class="dropdown-item">👤 Profile & Addresses</a>
               @if (auth.isSeller() || auth.isAdmin()) {
                 <div class="dropdown-divider"></div>

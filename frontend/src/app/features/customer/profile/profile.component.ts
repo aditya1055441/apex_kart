@@ -47,6 +47,15 @@ import { Address } from '../../../core/models';
               </div>
             </div>
 
+            <div class="mt-4 pt-4 border-t flex flex-col gap-2">
+              <a routerLink="/orders" class="btn btn-outline btn-sm btn-block font-semibold">
+                🛍️ View My Orders
+              </a>
+              <a routerLink="/tracking" class="btn btn-outline btn-sm btn-block font-semibold text-primary">
+                📦 Track Shipment
+              </a>
+            </div>
+
             @if (!auth.isSeller() && !auth.isAdmin()) {
               <div class="mt-6 pt-4 border-t text-center">
                 <p class="text-xs text-muted mb-3">Want to sell your products on ApexKart?</p>

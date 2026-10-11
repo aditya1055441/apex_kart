@@ -274,6 +274,45 @@ class DatabaseConnection {
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
         CREATE INDEX IF NOT EXISTS idx_verification_otps_identifier ON verification_otps(identifier);
+
+        CREATE TABLE IF NOT EXISTS shipment_tracking (
+            id BIGSERIAL PRIMARY KEY,
+            order_id VARCHAR(255) NOT NULL UNIQUE
+                REFERENCES orders(id) ON DELETE CASCADE,
+            tracking_number VARCHAR(50) NOT NULL UNIQUE,
+            current_status VARCHAR(30) NOT NULL
+                DEFAULT 'ORDER_PLACED',
+            estimated_delivery DATE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+            CONSTRAINT valid_current_status CHECK (
+                current_status IN (
+                    'ORDER_PLACED',
+                    'PACKED',
+                    'SHIPPED',
+                    'IN_TRANSIT',
+                    'OUT_FOR_DELIVERY',
+                    'DELIVERED',
+                    'CANCELLED',
+                    'DELIVERY_FAILED'
+                )
+            )
+        );
+        CREATE INDEX IF NOT EXISTS idx_shipment_tracking_number ON shipment_tracking(tracking_number);
+        CREATE INDEX IF NOT EXISTS idx_shipment_tracking_order ON shipment_tracking(order_id);
+
+        CREATE TABLE IF NOT EXISTS tracking_events (
+            id BIGSERIAL PRIMARY KEY,
+            shipment_id BIGINT NOT NULL
+                REFERENCES shipment_tracking(id) ON DELETE CASCADE,
+            status VARCHAR(30) NOT NULL,
+            location VARCHAR(200),
+            description TEXT NOT NULL,
+            event_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_tracking_events_shipment_time ON tracking_events(shipment_id, event_time, id);
       `);
       console.log('[DB] Tables successfully verified in PostgreSQL.');
     } catch (e: any) {
@@ -283,12 +322,11 @@ class DatabaseConnection {
 
   private async syncSeedsToPostgres(client: any): Promise<void> {
     try {
-      // Synchronize default super admin password hash with seed
-      const adminSeed = seedUsers.find(u => u.email === 'admin@marketplace.com');
-      if (adminSeed) {
+      // Synchronize seed users password hashes with database
+      for (const u of seedUsers) {
         await client.query(
-          `UPDATE users SET password_hash = $1 WHERE email = 'admin@marketplace.com';`,
-          [adminSeed.passwordHash]
+          `UPDATE users SET password_hash = $1 WHERE email = $2;`,
+          [u.passwordHash, u.email]
         );
       }
 

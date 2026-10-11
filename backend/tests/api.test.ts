@@ -379,6 +379,27 @@ describe('Multi-Vendor E-Commerce API Test Suite', () => {
       expect(res.body.order.paymentStatus).toBe('PAID');
       expect(res.body.order.status).toBe('PROCESSING');
     });
+
+    it('should fetch shipment tracking info via GET /api/orders/tracking and validate transitions', async () => {
+      // 1. Get tracking by orderId
+      const trackRes = await request(app)
+        .get(`/api/orders/tracking?orderId=${createdOrderId}`);
+
+      expect(trackRes.status).toBe(200);
+      expect(trackRes.body.success).toBe(true);
+      expect(trackRes.body.tracking).toBeDefined();
+      expect(trackRes.body.tracking.currentStatus).toBe('ORDER_PLACED');
+      expect(trackRes.body.tracking.events.length).toBeGreaterThan(0);
+
+      const trackingNumber = trackRes.body.tracking.trackingNumber;
+
+      // 2. Query by trackingNumber
+      const trackByNumRes = await request(app)
+        .get(`/api/orders/tracking?trackingNumber=${trackingNumber}`);
+
+      expect(trackByNumRes.status).toBe(200);
+      expect(trackByNumRes.body.tracking.trackingNumber).toBe(trackingNumber);
+    });
   });
 
   describe('6. Seller Operations & Fulfillment', () => {

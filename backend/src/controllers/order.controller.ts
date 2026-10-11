@@ -1,6 +1,8 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../database/db';
+import { trackingDb } from '../database/tracking.db';
+import { trackingService } from '../services/tracking.service';
 import { razorpayService } from '../services/razorpay.service';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { Order, OrderItem, Address } from '../types';
@@ -167,10 +169,22 @@ export const createOrder = async (req: AuthenticatedRequest, res: Response) => {
       }
     }
 
+    // Initialize Shipment Tracking
+    let trackingNumber: string | undefined = undefined;
+    try {
+      const tracking = await trackingService.createTrackingForOrder(savedOrder.id);
+      trackingNumber = tracking.trackingNumber;
+    } catch (e: any) {
+      console.error('[TRACKING ERROR] Could not initialize tracking for order:', e.message);
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Order created successfully',
-      order: savedOrder,
+      order: {
+        ...savedOrder,
+        trackingNumber
+      },
       razorpay: razorpayOrderId
         ? {
             orderId: razorpayOrderId,
@@ -188,7 +202,22 @@ export const createOrder = async (req: AuthenticatedRequest, res: Response) => {
 export const getMyOrders = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const orders = await db.getOrdersByCustomer(req.user!.id);
-    return res.json({ success: true, orders });
+    const ordersWithTracking = await Promise.all(
+      orders.map(async o => {
+        let shipment = await trackingDb.getShipmentByOrderId(o.id);
+        if (!shipment && o.status !== 'CANCELLED') {
+          try {
+            shipment = await trackingService.createTrackingForOrder(o.id);
+          } catch (e) {}
+        }
+        return {
+          ...o,
+          trackingNumber: shipment?.trackingNumber,
+          shipment
+        };
+      })
+    );
+    return res.json({ success: true, orders: ordersWithTracking });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
   }
@@ -215,7 +244,50 @@ export const getOrderById = async (req: AuthenticatedRequest, res: Response) => 
       }
     }
 
-    return res.json({ success: true, order });
+    let shipment = await trackingDb.getShipmentByOrderId(order.id);
+    if (!shipment && order.status !== 'CANCELLED') {
+      try {
+        shipment = await trackingService.createTrackingForOrder(order.id);
+      } catch (e) {}
+    }
+
+    return res.json({
+      success: true,
+      order: {
+        ...order,
+        trackingNumber: shipment?.trackingNumber,
+        shipment
+      }
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const getShipmentTracking = async (req: Request, res: Response) => {
+  try {
+    const trackingId = (req.query.trackingId || req.query.trackingNumber || req.query.id || req.query.orderId) as string;
+
+    if (!trackingId || typeof trackingId !== 'string' || !trackingId.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tracking ID or Number is required'
+      });
+    }
+
+    const tracking = await trackingService.getTrackingDetails(trackingId.trim());
+
+    if (!tracking) {
+      return res.status(404).json({
+        success: false,
+        message: `No shipment found for tracking identifier: "${trackingId.trim()}". Please check the number and try again.`
+      });
+    }
+
+    return res.json({
+      success: true,
+      tracking
+    });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
   }
@@ -244,6 +316,19 @@ export const cancelOrder = async (req: AuthenticatedRequest, res: Response) => {
     const updated = await db.updateOrderStatus(id, 'CANCELLED');
     // Also cancel all order items
     order.items.forEach(i => (i.status = 'CANCELLED'));
+
+    // Update tracking if exists
+    const shipment = await trackingDb.getShipmentByOrderId(id);
+    if (shipment && shipment.currentStatus !== 'CANCELLED' && shipment.currentStatus !== 'DELIVERED') {
+      try {
+        await trackingService.transitionShipmentStatus(
+          shipment.trackingNumber,
+          'CANCELLED',
+          'Customer Portal',
+          'Order was cancelled by customer'
+        );
+      } catch (e) {}
+    }
 
     return res.json({ success: true, message: 'Order cancelled successfully', order: updated });
   } catch (err: any) {

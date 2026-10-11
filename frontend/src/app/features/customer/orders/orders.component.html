@@ -26,6 +26,14 @@
             <!-- 2. Stepper Progress Tracking (if not cancelled) -->
             @if (order.status !== 'CANCELLED') {
               <div class="tracking-stepper p-4 border-b border-t bg-slate-50">
+                @if (order.trackingNumber) {
+                  <div class="flex items-center justify-between text-xs mb-3 flex-wrap gap-2">
+                    <span class="text-muted">Tracking ID: <strong class="text-slate-800 font-mono">{{ order.trackingNumber }}</strong></span>
+                    <a [routerLink]="['/tracking']" [queryParams]="{ id: order.trackingNumber }" class="btn btn-outline btn-xs font-bold text-primary">
+                      📦 View Live Tracking Timeline →
+                    </a>
+                  </div>
+                }
                 <div class="stepper-track flex justify-between relative">
                   <div class="step" [class.completed]="getStatusStep(order.status) >= 1">
                     <div class="step-dot">1</div>

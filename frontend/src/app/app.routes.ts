@@ -26,6 +26,7 @@ export const routes: Routes = [
   { path: 'products/:id', component: ProductDetailComponent },
   { path: 'checkout', component: CheckoutComponent },
   { path: 'orders', component: OrdersComponent },
+  { path: 'tracking', loadComponent: () => import('./features/customer/tracking/tracking.component').then(m => m.TrackingComponent) },
   { path: 'profile', component: ProfileComponent },
 
   // Seller routes
