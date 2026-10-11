@@ -222,7 +222,7 @@ export const googleLogin = async (req: Request, res: Response) => {
       });
     }
 
-    
+
     let decodedToken: any;
     if (config.nodeEnv === 'test' && typeof idToken === 'string' && idToken.startsWith('mock-')) {
       decodedToken = {

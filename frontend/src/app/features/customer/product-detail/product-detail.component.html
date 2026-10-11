@@ -22,10 +22,10 @@
           @if (product()!.images.length > 1) {
             <div class="thumbnails-row flex gap-3 mt-4">
               @for (img of product()!.images; track img) {
-                <button 
-                  type="button" 
-                  class="thumb-btn" 
-                  [class.active]="selectedImage() === img" 
+                <button
+                  type="button"
+                  class="thumb-btn"
+                  [class.active]="selectedImage() === img"
                   (click)="selectedImage.set(img)">
                   <img [src]="img" [alt]="product()!.title" />
                 </button>
@@ -74,9 +74,9 @@
               <label class="form-label mb-2 block">Choose Variant / Edition:</label>
               <div class="variant-chips flex flex-wrap gap-2">
                 @for (variant of product()!.variants; track variant.id) {
-                  <button 
-                    type="button" 
-                    class="variant-btn" 
+                  <button
+                    type="button"
+                    class="variant-btn"
                     [class.active]="selectedVariant()?.id === variant.id"
                     (click)="selectVariant(variant)">
                     <span>{{ variant.title }}</span>
@@ -118,19 +118,18 @@
                 }
               </div>
             }
-          </div>
-
-          <!-- Seller Credentials Card -->
-          @if (store()) {
-            <div class="seller-card p-4 border rounded-lg bg-surface flex items-center justify-between mb-8">
+            <!-- Seller Credentials Card -->
+            @if (store()) {
               <div>
-                <span class="text-xs text-muted block">Marketplace Seller</span>
-                <strong class="text-base text-main">{{ store().name }}</strong>
-                <p class="text-xs text-muted mt-0.5">Rating: ★ {{ store().rating }} ({{ store().totalReviews }} ratings)</p>
+                <div>
+                  <span class="text-xs text-muted block"><strong class="text-base text-main">Marketplace Seller: </strong></span>
+                  {{ store().name }}
+                  <p><strong class="text-base text-main">Rating: ★ </strong>{{ store().rating }} ({{ store().totalReviews }} ratings)</p>
+                </div>
+                <span class="badge badge-success">KYC Verified</span>
               </div>
-              <span class="badge badge-success">KYC Verified</span>
-            </div>
-          }
+            }
+          </div>
         </div>
       </div>
 

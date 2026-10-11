@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { razorpayService } from '../services/razorpay.service';
+import { emailService } from '../services/email.service';
+import { config } from '../config';
 import { db } from '../database/db';
 import { AuthenticatedRequest } from '../middleware/auth';
 
@@ -51,6 +53,23 @@ export const verifyPayment = async (req: Request, res: Response) => {
       createdAt: new Date().toISOString()
     });
 
+    // Send order confirmation email in background (non-blocking)
+    if (order.customerEmail && order.customerEmail.includes('@') && !order.customerEmail.endsWith('@phone.marketplace.com')) {
+      if (config.nodeEnv !== 'test') {
+        emailService.sendOrderConfirmation(order)
+          .then(res => {
+            if (res.success) {
+              console.log(`[ORDER EMAIL SUCCESS] Confirmation email delivered for order #${order.orderNumber} to ${order.customerEmail}`);
+            } else {
+              console.warn(`[ORDER EMAIL WARNING] Failed delivering confirmation email for order #${order.orderNumber}: ${res.error}`);
+            }
+          })
+          .catch(err => {
+            console.error(`[ORDER EMAIL EXCEPTION] Error delivering confirmation email for #${order.orderNumber}:`, err);
+          });
+      }
+    }
+
     return res.json({
       success: true,
       message: 'Payment verified and order is now being processed',
@@ -72,7 +91,21 @@ export const handleRazorpayWebhook = async (req: Request, res: Response) => {
       if (rzpOrderId) {
         const order = await db.findOrderByRazorpayOrderId(rzpOrderId);
         if (order && order.paymentStatus !== 'PAID') {
+          order.paymentStatus = 'PAID';
+          order.status = 'PROCESSING';
           await db.updateOrderStatus(order.id, 'PROCESSING', 'PAID');
+
+          if (order.customerEmail && order.customerEmail.includes('@') && !order.customerEmail.endsWith('@phone.marketplace.com')) {
+            if (config.nodeEnv !== 'test') {
+              emailService.sendOrderConfirmation(order)
+                .then(res => {
+                  if (res.success) {
+                    console.log(`[WEBHOOK ORDER EMAIL SUCCESS] Delivered for #${order.orderNumber}`);
+                  }
+                })
+                .catch(err => console.error('[WEBHOOK ORDER EMAIL ERROR]', err));
+            }
+          }
         }
       }
     }
