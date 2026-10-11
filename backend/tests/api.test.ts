@@ -33,7 +33,7 @@ describe('Multi-Vendor E-Commerce API Test Suite', () => {
     // Login as Admin
     const adminRes = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'admin@marketplace.com', password: 'Admin@123' });
+      .send({ email: 'admin@marketplace.com', password: 'system@S' });
     adminToken = adminRes.body.token;
   }, 25000);
 

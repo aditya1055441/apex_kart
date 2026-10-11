@@ -123,8 +123,18 @@ export class AuthModalComponent implements OnDestroy {
 
   fillCreds(email: string, pass: string) {
     this.loginEmail = email;
-    this.loginPassword = pass;
+    if (email.trim().toLowerCase() === 'admin@marketplace.com') {
+      this.loginPassword = '';
+    } else {
+      this.loginPassword = pass;
+    }
     this.errorMessage.set('');
+  }
+
+  onLoginEmailChange(val: string) {
+    if (val && val.trim().toLowerCase() === 'admin@marketplace.com') {
+      this.loginPassword = '';
+    }
   }
 
   onPasswordLogin() {

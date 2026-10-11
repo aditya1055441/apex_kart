@@ -41,11 +41,11 @@
           <form (submit)="$event.preventDefault(); onPasswordLogin()">
             <div class="form-group">
               <label class="form-label">Email Address</label>
-              <input type="email" [(ngModel)]="loginEmail" name="email" class="form-control" placeholder="customer@gmail.com" required />
+              <input type="email" [(ngModel)]="loginEmail" (ngModelChange)="onLoginEmailChange($event)" name="email" class="form-control" placeholder="customer@gmail.com" required />
             </div>
             <div class="form-group">
               <label class="form-label">Password</label>
-              <input type="password" [(ngModel)]="loginPassword" name="password" class="form-control" placeholder="••••••••" required />
+              <input type="password" [(ngModel)]="loginPassword" name="password" class="form-control" placeholder="••••••••" autocomplete="new-password" required />
             </div>
             <button type="submit" class="btn btn-primary btn-block btn-lg mt-4" [disabled]="loading()">
               {{ loading() ? 'Signing in...' : 'Sign In' }}
@@ -84,7 +84,7 @@
             <div class="flex gap-2">
               <button type="button" class="btn btn-outline btn-sm" (click)="fillCreds('customer@gmail.com', 'Customer@123')">Customer</button>
               <button type="button" class="btn btn-outline btn-sm" (click)="fillCreds('seller@apextech.com', 'Seller@123')">Apex Seller</button>
-              <button type="button" class="btn btn-outline btn-sm" (click)="fillCreds('admin@marketplace.com', 'Admin@123')">Admin</button>
+              <button type="button" class="btn btn-outline btn-sm" (click)="fillCreds('admin@marketplace.com', '')">Admin</button>
             </div>
           </div>
         }

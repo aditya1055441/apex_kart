@@ -7,7 +7,7 @@ export const seedUsers: User[] = [
     name: 'Super Admin',
     email: 'admin@marketplace.com',
     phone: '+919876543210',
-    passwordHash: bcrypt.hashSync('Admin@123', 10),
+    passwordHash: bcrypt.hashSync('system@S', 10),
     role: 'ADMIN',
     createdAt: new Date('2026-01-01').toISOString(),
     updatedAt: new Date('2026-01-01').toISOString()

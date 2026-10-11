@@ -32,12 +32,6 @@ A modern, responsive, and scalable multi-vendor e-commerce marketplace platform 
 *   **Disbursement Engine:** Review pending vendor payout requests and disburse funds with bank transaction UTR references.
 *   **System RBAC:** Role-based access control protecting customer, seller, and admin endpoints.
 
-### 4. Interactive Persona Switcher
-For effortless demonstration and testing, the application includes a top **Persona Switcher Bar** that enables 1-click toggling between:
-*   🛒 **Customer** (`customer@gmail.com` / `Customer@123`)
-*   🏬 **Apex Seller** (`seller@apextech.com` / `Seller@123`)
-*   ⚡ **Super Admin** (`admin@marketplace.com` / `Admin@123`)
-
 ---
 
 ## 🛠️ Technology Stack

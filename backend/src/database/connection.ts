@@ -283,6 +283,15 @@ class DatabaseConnection {
 
   private async syncSeedsToPostgres(client: any): Promise<void> {
     try {
+      // Synchronize default super admin password hash with seed
+      const adminSeed = seedUsers.find(u => u.email === 'admin@marketplace.com');
+      if (adminSeed) {
+        await client.query(
+          `UPDATE users SET password_hash = $1 WHERE email = 'admin@marketplace.com';`,
+          [adminSeed.passwordHash]
+        );
+      }
+
       const prodCountRes = await client.query('SELECT COUNT(*) FROM products;');
       const prodCount = parseInt(prodCountRes.rows[0].count, 10);
 

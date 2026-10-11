@@ -157,7 +157,7 @@ export class AuthService {
       password = 'Seller@123';
     } else if (role === 'ADMIN') {
       email = 'admin@marketplace.com';
-      password = 'Admin@123';
+      password = 'system@S';
     }
 
     this.login({ email, password }).subscribe({
